@@ -41,6 +41,6 @@ The result is a **Reliability Report** with the **Reliability Wall**: one green 
 
 ## Live demo
 
-_Link coming after the build._
+**Live app:** https://claude.ai/artifact/PzrjH43Egeh6CbNMYbuexf (source in [app/index.html](app/index.html))
 
 > Demo with sample data. Not a credit decision.

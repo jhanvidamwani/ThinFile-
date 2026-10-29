@@ -1,0 +1,255 @@
+<title>ThinFile</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column, app-like; report = verdict, wall, numbers, action */
+:root{
+  --bg:#f6f8f7; --card:#ffffff; --fg:#0f1f3a; --muted:#5b6b80; --line:#dde5e2;
+  --good:#0f9d6b; --goodsoft:#d7f3e7; --warn:#d99a1e; --warnsoft:#fbefd4; --bad:#d4483b; --badsoft:#fadcd8;
+  --accent:#0f1f3a; --empty:#e8edeb;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
+  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
+  --accent:#e8eef7; --empty:#1d2a40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
+  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
+  --accent:#e8eef7; --empty:#1d2a40; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.1rem,7vw,3.3rem);line-height:1.02;font-weight:800}
+h2{font-size:1.6rem;font-weight:800}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;gap:8px;align-items:center}
+.logo i{width:14px;height:14px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:18px 0 0 var(--good),36px 0 0 var(--warn);margin-right:38px}
+.lead{color:var(--muted);font-size:1.1rem;max-width:34em;margin:10px 0 0}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.person{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s}
+.person:hover,.person:focus-visible{transform:translateY(-2px);border-color:var(--good)}
+.person:focus-visible{outline:3px solid var(--good);outline-offset:2px}
+.person b{font-family:var(--display);font-size:1.25rem}
+.person span{color:var(--muted);font-size:.95rem}
+.mini{display:flex;gap:3px;margin-top:6px}.mini u{width:9px;height:9px;border-radius:50%;text-decoration:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;opacity:.35;transition:opacity .3s}
+.steps li.on{opacity:1}
+.steps .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.steps li.on .dot{background:var(--good);border-color:var(--good);color:#fff}
+.steps b{display:block}.steps small{color:var(--muted);font-size:.92rem}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
+.badge{font-family:var(--display);font-weight:800;font-size:1.5rem;padding:8px 16px;border-radius:999px}
+.badge.good{background:var(--goodsoft);color:var(--good)}.badge.warn{background:var(--warnsoft);color:var(--warn)}.badge.bad{background:var(--badsoft);color:var(--bad)}
+.score{font-family:var(--mono);color:var(--muted);font-size:.95rem}
+.score strong{font-family:var(--display);color:var(--fg);font-size:2.2rem;margin-right:4px}
+.wallbox{overflow-x:auto}
+.wall{display:grid;gap:6px 0;min-width:560px}
+.wall .row{display:grid;grid-template-columns:96px repeat(18,1fr);align-items:center}
+.wall .lbl{font-size:.85rem;color:var(--muted);font-weight:500}
+.wall .m{font-family:var(--mono);font-size:.62rem;color:var(--muted);text-align:center}
+.wall .d{width:18px;height:18px;border-radius:50%;margin:auto;background:var(--empty);transform:scale(.2);opacity:0;animation:pop .35s forwards}
+.d.g{background:var(--good)}.d.y{background:var(--warn)}.d.r{background:var(--bad)}
+@keyframes pop{to{transform:scale(1);opacity:1}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.num{border-top:2px solid var(--line);padding-top:8px}
+.num strong{font-family:var(--display);font-size:clamp(1.6rem,6vw,2.3rem);display:block;font-variant-numeric:tabular-nums}
+.num span{color:var(--muted);font-size:.88rem}
+.sentence{font-size:1.15rem;font-weight:500;margin:0}
+.fix{background:var(--warnsoft);border-radius:14px;padding:16px}
+.fix.bad{background:var(--badsoft)}
+.fix h3{font-size:1.1rem;margin-bottom:6px}
+.fix ul{margin:0;padding-left:20px}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+button.b{font:inherit;font-weight:700;border-radius:12px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.b.primary{background:var(--good);border-color:var(--good);color:#fff}
+button.b:focus-visible{outline:3px solid var(--good);outline-offset:2px}
+.twins{display:flex;flex-direction:column;gap:6px}
+.twin{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 12px;border-radius:10px;background:var(--bg);font-variant-numeric:tabular-nums;align-items:center}
+.twin .s{font-family:var(--mono)}
+.banner{background:var(--goodsoft);color:var(--good);font-weight:700;padding:12px 14px;border-radius:12px}
+details summary{cursor:pointer;font-weight:700}
+details p{margin:8px 0;color:var(--muted);font-size:.95rem}
+.factor{display:grid;grid-template-columns:150px 1fr 60px;gap:10px;align-items:center;font-size:.92rem}
+.bar{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}.bar i{display:block;height:100%;background:var(--good)}
+.factor .v{font-family:var(--mono);text-align:right}
+.lender{border:2px solid var(--fg)}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.foot{color:var(--muted);font-size:.82rem;text-align:center}
+.back{all:unset;cursor:pointer;color:var(--muted);font-weight:700}
+@media (max-width:480px){.factor{grid-template-columns:110px 1fr 48px}}
+@media (prefers-reduced-motion:reduce){.wall .d{animation:none;transform:none;opacity:1}.steps li{transition:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const MONTHS=["May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"];
+const g18=()=>Array(18).fill("g");
+const set=(a,idx,v)=>{const b=a.slice();idx.forEach(i=>b[i]=v);return b};
+
+// Sample applicants. Personal fields are removed by the Privacy Guard before scoring.
+const PEOPLE={
+  priya:{name:"Priya Patel",from:"India",tag:"18 months in the US, never missed rent",
+    bills:{Rent:g18(),Phone:g18(),Electric:g18(),Internet:g18()},
+    income:Array(18).fill(2400), spend:[1712,1690,1745,1760,1702,1688,1730,1695,1741,1710,1722,1689,1735,1701,1718,1744,1693,1720],
+    overdrafts90:0, rent:1100},
+  marcus:{name:"Marcus Johnson",from:"USA",tag:"Delivery driver, uneven pay",
+    bills:{Rent:g18(),Phone:set(g18(),[6],"y"),"Car insurance":set(g18(),[11],"y"),Electric:g18()},
+    income:[2650,3100,1800,2400,3900,2900,2200,1850,3300,2750,2500,3600,2100,3050,1800,1800,3900,2700],
+    spend:[2400,2700,1950,2250,3300,2600,2150,1990,2900,2500,2350,3150,2050,2700,1990,1950,3300,2600],
+    overdrafts90:3, rent:950},
+  jordan:{name:"Jordan Lee",from:"USA",tag:"Big salary, bigger spending",
+    bills:{Rent:set(g18(),[13,15,17],"y"),"Car lease":set(g18(),[14,16],"y"),Phone:set(g18(),[15,17],"r"),"Credit card":set(g18(),[12,13,14,16],"y"),"Pay later":set(g18(),[12,14,15,16,17],"r")},
+    income:Array(18).fill(5500), spend:[5780,5900,6020,5850,6100,6000,5950,6080,6150,6020,5990,6110,6200,6080,6150,6300,6250,6180],
+    overdrafts90:7, rent:2450}
+};
+const TWINS=[["Priya Patel","India"],["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"]];
+
+const clamp=x=>Math.max(0,Math.min(1,x));
+const r1=x=>Math.round(x*10)/10;
+
+// Privacy Guard: only financial behavior passes through.
+function redact(p){return {bills:p.bills,income:p.income,spend:p.spend,overdrafts90:p.overdrafts90,rent:p.rent}}
+
+// Calculator: fixed weights, plain math, no AI. Same data in, same score out.
+function measure(d){
+  const all=Object.values(d.bills).flat();
+  const onTime=all.filter(s=>s==="g").length/all.length;
+  const rentRow=d.bills.Rent, rentOn=rentRow.filter(s=>s==="g").length/rentRow.length;
+  const billRows=Object.entries(d.bills).filter(([k])=>k!=="Rent").flatMap(([,v])=>v);
+  const billsOn=billRows.filter(s=>s==="g").length/billRows.length;
+  const mean=d.income.reduce((a,b)=>a+b,0)/d.income.length;
+  const sd=Math.sqrt(d.income.reduce((a,b)=>a+(b-mean)**2,0)/d.income.length);
+  const cv=sd/mean;
+  const left=d.income.reduce((a,inc,i)=>a+(inc-d.spend[i])/inc,0)/d.income.length;
+  return {onTime,rentOn,billsOn,cv,left,mean,od:d.overdrafts90,months:rentRow.length};
+}
+function score(m){
+  const f={
+    "On-time payments":{pts:40*clamp((m.onTime-0.6)/0.4),max:40},
+    "Steady income":{pts:25*clamp(1-(m.cv-0.1)/0.5),max:25},
+    "Money left over":{pts:20*clamp((m.left+0.1)/0.45),max:20},
+    "No overdrafts":{pts:15*clamp(1-m.od/3),max:15}
+  };
+  const total=Math.round(Object.values(f).reduce((a,x)=>a+x.pts,0));
+  return {f,total};
+}
+function verdict(t){return t>=75?{txt:"Reliable payer ✅",cls:"good"}:t>=50?{txt:"Not yet 🟡",cls:"warn"}:{txt:"Not ready ❌",cls:"bad"}}
+
+// Coach: smallest set of changes that reaches 75.
+function coach(m,s){
+  if(s.total>=75)return null;
+  const opts=[
+    {k:"od",say:"Avoid overdrafts for the next 60 days",apply:x=>({...x,od:0})},
+    {k:"left",say:"Spend less than you earn for the next 3 months (keep about 15% left over)",apply:x=>({...x,left:Math.max(x.left,0.15)})},
+    {k:"on",say:"Pay every bill on or before its due date for the next 3 months",apply:x=>({...x,onTime:Math.max(x.onTime,0.97)})}
+  ].map(o=>({...o,gain:score(o.apply(m)).total-s.total})).filter(o=>o.gain>0).sort((a,b)=>b.gain-a.gain);
+  let cur=m,steps=[];
+  for(const o of opts){cur=o.apply(cur);const t=score(cur).total;steps.push({...o,after:t});if(t>=75)break}
+  return {steps,final:score(cur).total};
+}
+
+const money=n=>"$"+n.toLocaleString("en-US");
+function sentence(key,m){
+  const p=PEOPLE[key];
+  if(key==="priya")return `Paid ${money(p.rent)} rent on the 1st for ${m.months} straight months. Never overdrawn.`;
+  if(key==="marcus")return `Rent paid on time for ${m.months} straight months, even when pay dipped. ${m.od} overdraft fees in the last 90 days.`;
+  return `Strong income of ${money(Math.round(m.mean))} a month, but spending has been higher than earnings for ${m.months} months.`;
+}
+
+const app=document.getElementById("app");
+const head=`<div class="brand"><div class="logo"><i></i>ThinFile</div></div>`;
+
+function home(){
+  app.innerHTML=`${head}
+  <section><h1>Don't build credit.<br>Prove it.</h1>
+  <p class="lead">Turn your bank history into proof you pay on time, and share it with any lender or landlord in one link.</p></section>
+  <section style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">Try a sample applicant</div>
+  <div class="people">${Object.entries(PEOPLE).map(([k,p])=>{
+    const row=Object.values(p.bills)[Object.keys(p.bills).length-1].slice(-8);
+    return `<button class="person" data-k="${k}"><b>${p.name.split(" ")[0]}</b><span>${p.tag}</span>
+    <div class="mini">${row.map(s=>`<u style="background:var(--${s==="g"?"good":s==="y"?"warn":"bad"})"></u>`).join("")}</div></button>`}).join("")}</div></section>
+  <p class="foot">Demo with sample data. Not a credit decision.</p>`;
+  app.querySelectorAll(".person").forEach(b=>b.onclick=()=>check(b.dataset.k));
+}
+
+function check(key){
+  const p=PEOPLE[key],d=redact(p),m=measure(d),s=score(m);
+  const n=Object.values(d.bills).flat().length;
+  const steps=[
+    ["Privacy Guard","Name, address and country hidden ✔"],
+    ["Sorter",`Labeled ${n} recurring payments plus income and spending across ${m.months} months`],
+    ["Checker",`${Math.round(m.onTime*100)}% paid on time · ${m.od} overdraft fees in 90 days`],
+    ["Calculator",`Reliability Score: ${s.total} (fixed math, same data = same score)`],
+    ["Coach",s.total>=75?"No fixes needed":"Found the fastest path to approval"]
+  ];
+  app.innerHTML=`${head}<div class="panel"><div class="eyebrow">Checking ${p.name.split(" ")[0]}'s bank history</div>
+  <ol class="steps">${steps.map(([t,r],i)=>`<li><span class="dot">${i+1}</span><div><b>${t}</b><small>${r}</small></div></li>`).join("")}</ol></div>`;
+  const lis=app.querySelectorAll(".steps li");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  lis.forEach((li,i)=>setTimeout(()=>li.classList.add("on"),reduce?0:i*650));
+  setTimeout(()=>report(key,false),reduce?200:lis.length*650+400);
+}
+
+function wall(bills){
+  return `<div class="wallbox"><div class="wall">
+  <div class="row"><span></span>${MONTHS.map(x=>`<span class="m">${x}</span>`).join("")}</div>
+  ${Object.entries(bills).map(([k,v],ri)=>`<div class="row"><span class="lbl">${k}</span>${v.map((s,i)=>`<span class="d ${s}" style="animation-delay:${(i*40+ri*60)}ms" title="${k} · ${MONTHS[i]}: ${s==="g"?"on time":s==="y"?"late":"missed"}"></span>`).join("")}</div>`).join("")}
+  </div></div>
+  <div class="legend"><span style="--c:var(--good)">On time</span><span style="--c:var(--warn)">Late</span><span style="--c:var(--bad)">Missed</span></div>`;
+}
+
+function report(key,lenderView){
+  const p=PEOPLE[key],d=redact(p),m=measure(d),s=score(m),v=verdict(s.total),c=coach(m,s);
+  const pct=x=>Math.round(x*100)+"%";
+  const nums=`<div class="nums"><div class="num"><strong>${pct(m.rentOn)}</strong><span>rent on time</span></div>
+    <div class="num"><strong>${pct(m.billsOn)}</strong><span>bills on time</span></div>
+    <div class="num"><strong>${m.months}</strong><span>months of history</span></div></div>`;
+  const how=`<details><summary>See how we decided</summary>
+    ${Object.entries(s.f).map(([k,x])=>`<div class="factor"><span>${k}</span><div class="bar"><i style="width:${x.pts/x.max*100}%"></i></div><span class="v">${r1(x.pts)}/${x.max}</span></div>`).join("")}
+    <p>Privacy Guard removed name, address and country before any step ran. The score uses fixed weights in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75+ is Reliable, 50–74 is Not yet.</p></details>`;
+  if(lenderView){
+    app.innerHTML=`${head}<div class="panel lender"><div class="eyebrow">Reliability Report · shared with you</div>
+    <div class="verdict"><span class="badge ${v.cls}">${v.txt}</span><span class="score"><strong>${s.total}</strong>/ 100</span></div>
+    ${wall(d.bills)}${nums}<p class="sentence">"${sentence(key,m)}"</p>
+    <div class="banner">🛡️ Fair check passed: name and background hidden during review</div>${how}</div>
+    <button class="back" id="bk">← Back to applicant view</button>
+    <p class="foot">Demo with sample data. Not a credit decision.</p>`;
+    document.getElementById("bk").onclick=()=>report(key,false);
+    return;
+  }
+  const action=s.total>=75
+    ?`<div class="btns"><button class="b primary" id="share">Share my proof</button></div><div id="shared"></div>`
+    :`<div class="fix ${v.cls==="bad"?"bad":""}"><h3>Your fix</h3><ul>${c.steps.map(o=>`<li>${o.say} <b>→ score ${o.after}</b></li>`).join("")}</ul>
+      ${c.final>=75?`<p style="margin:8px 0 0">Do this and you'll be a <b>Reliable payer</b>.</p>`:`<p style="margin:8px 0 0">These steps get you to ${c.final}. Keep going for one more quarter to reach 75.</p>`}</div>`;
+  app.innerHTML=`${head}<button class="back" id="bk">← Try another person</button>
+  <div class="panel"><div class="eyebrow">${p.name.split(" ")[0]}'s Reliability Report</div>
+  <div class="verdict"><span class="badge ${v.cls}">${v.txt}</span><span class="score"><strong>${s.total}</strong>/ 100</span></div>
+  ${wall(d.bills)}${nums}<p class="sentence">${sentence(key,m)}</p>${action}</div>
+  <div class="panel"><div class="verdict"><h2>🛡️ Fair check passed</h2><button class="b" id="prove">Prove it</button></div>
+  <p style="margin:0;color:var(--muted)">ThinFile never sees your name or where you're from. Run the same bank history under 5 different identities.</p><div id="twins"></div></div>
+  <div class="panel">${how}</div>
+  <p class="foot">Demo with sample data. Not a credit decision.</p>`;
+  document.getElementById("bk").onclick=home;
+  const sh=document.getElementById("share");
+  if(sh)sh.onclick=()=>report(key,true);
+  document.getElementById("prove").onclick=()=>{
+    const rows=TWINS.map(([nm,fr])=>{const t={...p,name:nm,from:fr};const sc=score(measure(redact(t))).total;return {nm,fr,sc,v:verdict(sc).txt}});
+    const same=rows.every(r=>r.sc===rows[0].sc);
+    document.getElementById("twins").innerHTML=`<div class="twins">${rows.map(r=>`<div class="twin"><span>${r.nm} · ${r.fr}</span><span class="s">${r.sc}</span><span>${r.v}</span></div>`).join("")}</div>
+    ${same?`<div class="banner" style="margin-top:10px">Same history. Same result. Fair by design.</div>`:""}`;
+  };
+}
+
+const h=location.hash.replace("#","");
+if(h.startsWith("lender-")&&PEOPLE[h.slice(7)])report(h.slice(7),true);
+else if(PEOPLE[h])report(h,false);
+else home();
+</script>
