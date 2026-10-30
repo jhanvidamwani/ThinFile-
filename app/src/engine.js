@@ -118,18 +118,26 @@ const ThinFile = (() => {
     // Recurring payments: rent, bills and debts seen in 3+ different months.
     const groups = {};
     for (const r of rows) if (["rent", "bill", "debt"].includes(r.cat) && r.amount < 0) (groups[r.label] ||= []).push(r);
-    const wall = {};
+    const wall = {}, detail = {}, dueDay = {};
     for (const [label, list] of Object.entries(groups)) {
       const byMonth = {};
-      for (const r of list) (byMonth[ym(r.date)] ||= []).push(Number(r.date.slice(8)));
+      for (const r of list) (byMonth[ym(r.date)] ||= []).push(r);
       if (Object.keys(byMonth).length < 3) continue;
-      const days = Object.values(byMonth).map(d => Math.min(...d));
+      const firstPay = mo => byMonth[mo].reduce((a, b) => (a.date <= b.date ? a : b));
+      const days = Object.keys(byMonth).map(mo => Number(firstPay(mo).date.slice(8)));
       const freq = {}; days.forEach(d => freq[d] = (freq[d] || 0) + 1);
       const due = Number(Object.entries(freq).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]);
       const start = ym(list[0].date);
+      dueDay[label] = due;
+      detail[label] = [];
       wall[label] = months.map((mo, i) => {
-        if (mo < start) return "none";
-        if (byMonth[mo]) return Math.min(...byMonth[mo]) - due <= 3 ? "g" : "y";
+        if (mo < start) { detail[label].push(null); return "none"; }
+        if (byMonth[mo]) {
+          const p = firstPay(mo), late = Number(p.date.slice(8)) - due;
+          detail[label].push({ date: p.date, amount: -p.amount, late });
+          return late <= 3 ? "g" : "y";
+        }
+        detail[label].push(null);
         // The last month may be incomplete: only call it missed once the due day has passed.
         if (i === months.length - 1 && Number(last.slice(8)) < due + 4) return "none";
         return "r";
@@ -155,7 +163,7 @@ const ThinFile = (() => {
     const left = paidMonths.length ? paidMonths.reduce((a, m) => a + (inc[m] - out[m]) / inc[m], 0) / paidMonths.length : -1;
     const rentRow = wall.Rent ? wall.Rent.filter(s => s !== "none") : [];
     return {
-      months, wall, income, spend, overdrafts90,
+      months, wall, detail, dueDay, income, spend, overdrafts90,
       onTime: rate(cells) ?? 0, rentOn: rate(rentRow), billsOn: rate(billCells),
       late: cells.filter(s => s === "y").length, missed: cells.filter(s => s === "r").length,
       payments: cells.length, mean, cv: mean ? sd / mean : 1, left,
@@ -201,6 +209,20 @@ const ThinFile = (() => {
     return { needed: true, steps, final: score(cur).total };
   }
 
-  return { parseCSV, redact, sortRules, applySort, check, score, coach, merchantKey, CATS };
+  // ---------- Report ID ----------
+  // A fingerprint of exactly what the agents saw (the redacted rows). Two people with
+  // the same history get the same ID, whatever their names.
+  function fingerprint(rows) {
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    const s = rows.map(r => `${r.date}|${r.desc}|${r.amount}`).join("\n");
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+      h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
+    }
+    return "TF-" + (h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0")).slice(0, 10).toUpperCase();
+  }
+
+  return { parseCSV, redact, sortRules, applySort, check, score, coach, fingerprint, merchantKey, CATS };
 })();
 if (typeof module !== "undefined") module.exports = ThinFile;

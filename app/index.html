@@ -1,112 +1,237 @@
 <title>ThinFile</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow app column; report reads verdict -> wall -> numbers -> action */
+/* Layout: paperwork. Cool paper desk, white statement sheets, ledger figures in mono, one cobalt accent.
+   Status colors (good/warn/bad) are semantic only. */
 :root{
-  --bg:#f6f8f7; --card:#ffffff; --fg:#0f1f3a; --muted:#5b6b80; --line:#dde5e2;
-  --good:#0f9d6b; --goodsoft:#d7f3e7; --warn:#c98a12; --warnsoft:#fbefd4; --bad:#d4483b; --badsoft:#fadcd8;
-  --empty:#e8edeb; --ai:#5b5bd6; --aisoft:#e7e7fb;
-  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --desk:#eef0ee; --sheet:#ffffff; --ink:#121a2b; --muted:#5c6577; --rule:#d6dbe0; --faint:#eef1f4;
+  --accent:#2743d6; --accent-soft:#e3e8fd;
+  --good:#0d8458; --good-soft:#dcf2e8; --warn:#a96f0f; --warn-soft:#f8ecd2; --bad:#bf3626; --bad-soft:#f8dfdb;
+  --shadow:0 1px 0 rgba(18,26,43,.04),0 12px 32px -14px rgba(18,26,43,.22);
+  --sans:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
-  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
-  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}}
+  --desk:#0b0f17; --sheet:#141a25; --ink:#e8ecf3; --muted:#97a1b3; --rule:#283142; --faint:#1b2230;
+  --accent:#8195ff; --accent-soft:#1f2747;
+  --good:#3ccf8e; --good-soft:#123326; --warn:#e9b24c; --warn-soft:#352a12; --bad:#ff7a66; --bad-soft:#3a1c18;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 16px 40px -16px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
-  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
-  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}
+  --desk:#0b0f17; --sheet:#141a25; --ink:#e8ecf3; --muted:#97a1b3; --rule:#283142; --faint:#1b2230;
+  --accent:#8195ff; --accent-soft:#1f2747;
+  --good:#3ccf8e; --good-soft:#123326; --warn:#e9b24c; --warn-soft:#352a12; --bad:#ff7a66; --bad-soft:#3a1c18;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 16px 40px -16px rgba(0,0,0,.6); color-scheme:dark}
+
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
-.wrap{max-width:780px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
-h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
-h1{font-size:clamp(2.1rem,7vw,3.3rem);line-height:1.02;font-weight:800}
-h2{font-size:1.45rem;font-weight:800}
-h3{font-size:1.1rem}
-.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:10px}
-.logo i{display:flex;gap:4px}.logo i b{width:12px;height:12px;border-radius:50%;background:var(--good)}.logo i b:last-child{background:var(--warn)}
-.lead{color:var(--muted);font-size:1.1rem;max-width:34em;margin:10px 0 0}
-.eyebrow{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-.person{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s}
-.person:hover{transform:translateY(-2px);border-color:var(--good)}
-.person:focus-visible{outline:3px solid var(--good);outline-offset:2px}
-.person b{font-family:var(--display);font-size:1.25rem}
-.person span{color:var(--muted);font-size:.95rem}
-.mini{display:flex;gap:3px;margin-top:6px}.mini u{width:9px;height:9px;border-radius:50%}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
-textarea,input[type=text]{font:inherit;font-size:.9rem;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg)}
-textarea{font-family:var(--mono);font-size:.8rem;min-height:150px;resize:vertical}
-textarea:focus,input:focus{outline:2px solid var(--good);outline-offset:1px}
-.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.err{color:var(--bad);font-weight:700;margin:0}
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.steps li{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;opacity:.35;transition:opacity .3s}
-.steps li.on,.steps li.run{opacity:1}
-.steps .dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700}
-.steps li.run .dot{border-color:var(--good);animation:pulse 1s infinite}
-.steps li.on .dot{background:var(--good);border-color:var(--good);color:#fff}
-@keyframes pulse{50%{box-shadow:0 0 0 6px var(--goodsoft)}}
-.steps b{display:inline}.steps small{display:block;color:var(--muted);font-size:.92rem}
-.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
-.tag.ai{background:var(--aisoft);color:var(--ai)}.tag.code{background:var(--empty);color:var(--muted)}
-.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
-.badge{font-family:var(--display);font-weight:800;font-size:1.45rem;padding:8px 16px;border-radius:999px}
-.badge.good{background:var(--goodsoft);color:var(--good)}.badge.warn{background:var(--warnsoft);color:var(--warn)}.badge.bad{background:var(--badsoft);color:var(--bad)}
-.score{font-family:var(--mono);color:var(--muted);font-size:.95rem}
-.score strong{font-family:var(--display);color:var(--fg);font-size:2.2rem;margin-right:4px}
-.wallbox{overflow-x:auto;padding-bottom:4px}
-.wall{display:grid;gap:7px 0}
-.wall .r{display:grid;align-items:center}
-.wall .lbl{font-size:.85rem;color:var(--muted);font-weight:500;white-space:nowrap;padding-right:10px}
-.wall .m{font-family:var(--mono);font-size:.6rem;line-height:1.25;color:var(--muted);text-align:center;white-space:nowrap}
-.wall .d{width:18px;height:18px;border-radius:50%;margin:auto;background:var(--empty);transform:scale(.2);opacity:0;animation:pop .35s forwards}
-.d.g{background:var(--good)}.d.y{background:var(--warn)}.d.r{background:var(--bad)}.d.none{background:transparent;border:1px dashed var(--line)}
-@keyframes pop{to{transform:scale(1);opacity:1}}
-.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
-.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
-.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.num{border-top:2px solid var(--line);padding-top:8px;min-width:0}
-.num strong{font-family:var(--display);font-size:clamp(1.5rem,6vw,2.2rem);display:block;font-variant-numeric:tabular-nums}
-.num span{color:var(--muted);font-size:.86rem}
-.sentence{font-size:1.12rem;font-weight:500;margin:0}
-.ai-note{border-left:3px solid var(--ai);padding:4px 0 4px 12px;color:var(--fg);margin:0}
-.ai-note small{display:block;color:var(--ai);font-weight:700;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
-.fix{background:var(--warnsoft);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
-.fix.bad{background:var(--badsoft)}
-.fix ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
-.btns{display:flex;flex-wrap:wrap;gap:10px}
-button.b{font:inherit;font-weight:700;border-radius:12px;padding:11px 18px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
-button.b.primary{background:var(--good);border-color:var(--good);color:#fff}
-button.b:disabled{opacity:.5;cursor:default}
-button.b:focus-visible{outline:3px solid var(--good);outline-offset:2px}
-.twins{display:flex;flex-direction:column;gap:6px}
-.twin{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:9px 12px;border-radius:10px;background:var(--bg);align-items:center;font-variant-numeric:tabular-nums}
-.twin .s{font-family:var(--mono);font-weight:700}
-.banner{background:var(--goodsoft);color:var(--good);font-weight:700;padding:12px 14px;border-radius:12px}
-.banner.warn{background:var(--warnsoft);color:var(--warn)}
-details summary{cursor:pointer;font-weight:700;font-family:var(--display);font-size:1.1rem}
-details[open] summary{margin-bottom:12px}
-.factor{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;align-items:center;font-size:.92rem}
-.bar{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}.bar i{display:block;height:100%;background:var(--good)}
-.factor .v{font-family:var(--mono);text-align:right}
-.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;max-height:280px}
-table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
-th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{position:sticky;top:0;background:var(--card);color:var(--muted);font-weight:700}
-td.amt{text-align:right;font-family:var(--mono)}
+body{background:var(--desk);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
+h1{font-size:clamp(2.6rem,8vw,4.6rem);line-height:.95;font-weight:900}
+h2{font-size:clamp(1.4rem,4vw,1.85rem);font-weight:800;line-height:1.1}
+h3{font-size:1.05rem;font-weight:800}
+p{margin:0}
+.mono{font-family:var(--mono)}
 .muted{color:var(--muted)}
-.lender{border:2px solid var(--fg)}
-.foot{color:var(--muted);font-size:.82rem;text-align:center;margin:0}
-.back{all:unset;cursor:pointer;color:var(--muted);font-weight:700}
-.back:focus-visible{outline:2px solid var(--good)}
-@media (max-width:480px){.factor{grid-template-columns:110px 1fr 54px}.panel{padding:18px}}
-@media (prefers-reduced-motion:reduce){.wall .d{animation:none;transform:none;opacity:1}.steps li.run .dot{animation:none}}
+.label{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:900;font-size:1.15rem;letter-spacing:-.02em}
+.logo svg{width:26px;height:22px}
+.bar .label a{color:inherit}
+
+/* buttons */
+.btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:11px 18px;border-radius:10px;border:1px solid var(--rule);background:var(--sheet);transition:transform .12s,background .15s,border-color .15s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.link{all:unset;cursor:pointer;color:var(--muted);font-weight:600;display:inline-flex;gap:6px;align-items:center}
+.link:hover{color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;padding-block:24px 8px}
+.hero>*,.check>*,.plan>*,.files>*,section{min-width:0}
+@media (max-width:620px){.bar .label{display:none}}
+.hero .lead{font-size:1.15rem;color:var(--muted);max-width:30em;margin-top:18px}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.demo{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:14px;transform:rotate(1.2deg)}
+.demo .head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--rule);padding-bottom:10px}
+.demo .count{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.demo .count b{color:var(--good);font-weight:600}
+@media (max-width:760px){.hero{grid-template-columns:1fr}.demo{transform:none}}
+
+/* folder-tab cards */
+.files{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-top:14px}
+@media (max-width:760px){.files{grid-template-columns:1fr}}
+.file{all:unset;box-sizing:border-box;cursor:pointer;position:relative;background:var(--sheet);border:1px solid var(--rule);border-radius:0 10px 10px 10px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.file::before{content:attr(data-tab);position:absolute;left:-1px;top:-24px;height:24px;padding:3px 14px 0;background:var(--sheet);border:1px solid var(--rule);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;color:var(--muted)}
+.file:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.file:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.file .who{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.file .who b{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+.file p{color:var(--muted);font-size:.95rem}
+.file .open{font-family:var(--mono);font-size:.75rem;color:var(--accent);margin-top:2px}
+.pill{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* how it works */
+.how{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.how div{padding:16px 14px 16px 0;display:flex;flex-direction:column;gap:4px}
+.how div+div{padding-left:14px;border-left:1px solid var(--rule)}
+.how b{font-size:.98rem}
+.how span{color:var(--muted);font-size:.86rem;line-height:1.4}
+@media (max-width:760px){.how{grid-template-columns:1fr}.how div+div{border-left:none;border-top:1px solid var(--rule);padding-left:0}}
+
+/* sheets */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0;position:relative}
+@media (max-width:520px){.sheet{padding:18px}}
+.sheet-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.sheet-head .label b{color:var(--ink);font-weight:600}
+textarea,input[type=text]{font:inherit;width:100%;border:1px solid var(--rule);border-radius:8px;padding:12px;background:var(--desk);color:var(--ink)}
+textarea{font-family:var(--mono);font-size:.78rem;min-height:140px;resize:vertical}
+.err{color:var(--bad);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* checking */
+.check{display:grid;grid-template-columns:1fr 1.1fr;gap:20px}
+@media (max-width:760px){.check{grid-template-columns:1fr}}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);opacity:.4;transition:opacity .35s}
+.steps li:last-child{border-bottom:none}
+.steps li.run,.steps li.on{opacity:1}
+.steps .n{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--rule);display:grid;place-items:center;font-family:var(--mono);font-size:.78rem;transition:background .3s,border-color .3s,color .3s}
+.steps li.run .n{border-color:var(--accent);color:var(--accent);animation:ring 1.1s infinite}
+.steps li.on .n{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+@keyframes ring{50%{box-shadow:0 0 0 5px var(--accent-soft)}}
+.steps .t{display:flex;gap:8px;align-items:center;font-weight:700}
+.steps small{display:block;color:var(--muted);font-size:.9rem;margin-top:2px}
+.kind{font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--faint);color:var(--muted)}
+.kind.ai{background:var(--accent-soft);color:var(--accent)}
+.tape{background:var(--desk);border-radius:8px;padding:10px;height:380px;overflow:hidden;position:relative;font-family:var(--mono);font-size:.74rem;mask-image:linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent)}
+.tape-in{display:flex;flex-direction:column;gap:4px}
+.tx{display:grid;grid-template-columns:76px 1fr auto auto;gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:var(--sheet);animation:slide .35s cubic-bezier(.2,.8,.2,1) both}
+.tx .d{color:var(--muted)}.tx .s{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tx .a{text-align:right}
+.tx .c{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:4px;background:var(--faint);color:var(--muted);min-width:64px;text-align:center;transition:background .3s,color .3s}
+.tx .c.set{background:var(--accent-soft);color:var(--accent)}
+.tx .c.rent,.tx .c.bill,.tx .c.debt{background:var(--good-soft);color:var(--good)}
+.tx .c.fee{background:var(--bad-soft);color:var(--bad)}
+.tx .s.hid{color:var(--accent)}
+@keyframes slide{from{opacity:0;transform:translateY(14px)}}
+@media (max-width:520px){.tx{grid-template-columns:1fr auto auto}.tx .d{display:none}}
+
+/* report */
+.stamp{position:absolute;right:22px;top:58px;font-family:var(--mono);font-weight:600;font-size:clamp(.95rem,2.6vw,1.25rem);letter-spacing:.08em;text-transform:uppercase;padding:8px 14px;border:3px solid currentColor;border-radius:6px;transform:rotate(-7deg);opacity:.92;pointer-events:none;mix-blend-mode:multiply;animation:stamp .45s cubic-bezier(.3,1.6,.5,1) .5s both}
+:root[data-theme="dark"] .stamp{mix-blend-mode:normal}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stamp{mix-blend-mode:normal}}
+.stamp.good{color:var(--good)}.stamp.warn{color:var(--warn)}.stamp.bad{color:var(--bad)}
+.stamp small{display:block;font-size:.6em;letter-spacing:.12em;opacity:.8}
+@keyframes stamp{from{opacity:0;transform:rotate(-14deg) scale(2.2)}to{opacity:.92;transform:rotate(-7deg) scale(1)}}
+.shake{animation:shake .25s .9s}
+@keyframes shake{30%{transform:translateY(2px)}60%{transform:translateY(-1px)}}
+@media (max-width:620px){.stamp{position:static;align-self:flex-start;margin-top:-4px}}
+.scorebox{display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:end;padding-right:190px}
+@media (max-width:620px){.scorebox{padding-right:0;grid-template-columns:1fr}}
+.big{font-family:var(--mono);font-size:clamp(3.4rem,10vw,5rem);font-weight:600;line-height:.9;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.big small{font-size:.28em;color:var(--muted);letter-spacing:0;margin-left:4px}
+.stack{display:flex;height:12px;border-radius:3px;overflow:hidden;background:var(--faint)}
+.stack i{height:100%;transform-origin:left;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+.stack i:nth-child(1){background:var(--ink)}.stack i:nth-child(2){background:var(--accent)}.stack i:nth-child(3){background:var(--good)}.stack i:nth-child(4){background:var(--muted)}
+@keyframes grow{from{transform:scaleX(0)}}
+.keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin-top:10px;font-size:.84rem}
+.keys span{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--rule);padding-bottom:2px}
+.keys span::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c);align-self:center;flex:none}
+.keys span em{font-style:normal;margin-right:auto}
+.keys b{font-family:var(--mono);font-weight:500}
+@media (max-width:560px){.keys{grid-template-columns:1fr}}
+.sheet-head .label b{white-space:nowrap}
+
+.wallbox{overflow-x:auto;padding:4px 2px 6px}
+.wall{display:grid;gap:6px 0}
+.wall .r{display:grid;align-items:center}
+.wall .lbl{font-size:.84rem;font-weight:600;white-space:nowrap;padding-right:12px}
+.wall .m{font-family:var(--mono);font-size:.6rem;line-height:1.25;color:var(--muted);text-align:center;white-space:nowrap}
+.strip{display:flex;flex-direction:column;gap:6px}
+.strip>div{display:flex;gap:5px;flex-wrap:wrap}
+.strip .dot{width:13px;height:13px;margin:0;cursor:inherit}
+.dot{all:unset;display:block;box-sizing:border-box;width:18px;height:18px;border-radius:50%;margin:auto;cursor:pointer;background:var(--faint);transform:scale(.2);opacity:0;animation:pop .32s cubic-bezier(.3,1.5,.5,1) forwards;transition:box-shadow .15s}
+.dot:hover,.dot:focus-visible{box-shadow:0 0 0 3px var(--sheet),0 0 0 5px var(--ink);outline:none}
+.dot.g{background:var(--good)}.dot.y{background:var(--warn)}.dot.r{background:var(--bad)}
+.dot.none{background:transparent;border:1px dashed var(--rule);cursor:default;width:16px;height:16px}
+@keyframes pop{to{transform:scale(1);opacity:1}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);align-items:center}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--c)}
+.legend .tipnote{margin-left:auto;font-family:var(--mono);font-size:.72rem}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--sheet);padding:9px 12px;border-radius:8px;font-size:.82rem;line-height:1.35;max-width:240px;box-shadow:var(--shadow);opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+#tip.show{opacity:1;transform:none}
+#tip b{display:block}
+#tip .mono{font-size:.76rem;opacity:.85}
+
+.figs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--rule)}
+.figs div{padding:12px 12px 0 0;display:flex;flex-direction:column}
+.figs div+div{padding-left:12px;border-left:1px solid var(--rule)}
+.figs strong{font-family:var(--mono);font-size:clamp(1.3rem,4.5vw,1.9rem);font-weight:600;font-variant-numeric:tabular-nums}
+.figs span{color:var(--muted);font-size:.82rem}
+@media (max-width:560px){.figs{grid-template-columns:1fr 1fr}.figs div:nth-child(3){border-left:none;padding-left:0}}
+.summary{font-size:1.15rem;font-weight:500;line-height:1.45;max-width:40em}
+.byline{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;display:block}
+
+.plan{border-top:2px solid var(--ink);padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media (max-width:700px){.plan{grid-template-columns:1fr}}
+.plan ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.plan li b{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.whatif{background:var(--desk);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.whatif .res{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.whatif .res .big{font-size:2.4rem}
+.slider{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.88rem}
+.slider output{font-family:var(--mono);font-weight:600}
+.slider input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+
+.twins{display:flex;flex-direction:column}
+.twin{display:grid;grid-template-columns:1.4fr auto auto auto;gap:14px;padding:9px 0;border-bottom:1px solid var(--rule);align-items:center;animation:slide .3s both}
+.twin .id{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.twin .s{font-family:var(--mono);font-weight:600}
+@media (max-width:520px){.twin{grid-template-columns:1fr auto auto}.twin .id{display:none}}
+.verdict-line{padding:12px 14px;border-radius:8px;font-weight:700;display:flex;gap:10px;align-items:center}
+.verdict-line.good{background:var(--good-soft);color:var(--good)}.verdict-line.warn{background:var(--warn-soft);color:var(--warn)}
+.verdict-line svg{width:20px;height:20px;flex:none}
+
+details summary{cursor:pointer;font-weight:800;font-size:1.05rem;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-family:var(--mono);font-size:1.3rem;transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+details[open] summary{margin-bottom:14px}
+.tbl{overflow:auto;border:1px solid var(--rule);border-radius:6px;max-height:300px}
+table{border-collapse:collapse;width:100%;font-size:.8rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{position:sticky;top:0;background:var(--sheet);font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.amt{text-align:right;font-family:var(--mono)}
+.by{font-family:var(--mono);font-size:.65rem;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--faint);color:var(--muted)}
+.by.ai{background:var(--accent-soft);color:var(--accent)}
+.shared{position:absolute;top:-12px;left:20px;background:var(--accent);color:#fff;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.foot{color:var(--muted);font-size:.8rem;text-align:center;font-family:var(--mono)}
+
+/* screen transitions */
+@keyframes vt-out{to{opacity:0;transform:translateY(-10px)}}
+@keyframes vt-in{from{opacity:0;transform:translateY(16px)}}
+::view-transition-old(root){animation:vt-out .22s ease-in both}
+::view-transition-new(root){animation:vt-in .38s cubic-bezier(.2,.8,.2,1) both}
+.enter{animation:vt-in .4s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+}
 </style>
 
 <div class="wrap" id="app"></div>
+<div id="tip" role="tooltip"></div>
 
 <script>
 // ThinFile engine: parse -> redact -> sort -> check -> score -> coach.
@@ -229,18 +354,26 @@ const ThinFile = (() => {
     // Recurring payments: rent, bills and debts seen in 3+ different months.
     const groups = {};
     for (const r of rows) if (["rent", "bill", "debt"].includes(r.cat) && r.amount < 0) (groups[r.label] ||= []).push(r);
-    const wall = {};
+    const wall = {}, detail = {}, dueDay = {};
     for (const [label, list] of Object.entries(groups)) {
       const byMonth = {};
-      for (const r of list) (byMonth[ym(r.date)] ||= []).push(Number(r.date.slice(8)));
+      for (const r of list) (byMonth[ym(r.date)] ||= []).push(r);
       if (Object.keys(byMonth).length < 3) continue;
-      const days = Object.values(byMonth).map(d => Math.min(...d));
+      const firstPay = mo => byMonth[mo].reduce((a, b) => (a.date <= b.date ? a : b));
+      const days = Object.keys(byMonth).map(mo => Number(firstPay(mo).date.slice(8)));
       const freq = {}; days.forEach(d => freq[d] = (freq[d] || 0) + 1);
       const due = Number(Object.entries(freq).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]);
       const start = ym(list[0].date);
+      dueDay[label] = due;
+      detail[label] = [];
       wall[label] = months.map((mo, i) => {
-        if (mo < start) return "none";
-        if (byMonth[mo]) return Math.min(...byMonth[mo]) - due <= 3 ? "g" : "y";
+        if (mo < start) { detail[label].push(null); return "none"; }
+        if (byMonth[mo]) {
+          const p = firstPay(mo), late = Number(p.date.slice(8)) - due;
+          detail[label].push({ date: p.date, amount: -p.amount, late });
+          return late <= 3 ? "g" : "y";
+        }
+        detail[label].push(null);
         // The last month may be incomplete: only call it missed once the due day has passed.
         if (i === months.length - 1 && Number(last.slice(8)) < due + 4) return "none";
         return "r";
@@ -266,7 +399,7 @@ const ThinFile = (() => {
     const left = paidMonths.length ? paidMonths.reduce((a, m) => a + (inc[m] - out[m]) / inc[m], 0) / paidMonths.length : -1;
     const rentRow = wall.Rent ? wall.Rent.filter(s => s !== "none") : [];
     return {
-      months, wall, income, spend, overdrafts90,
+      months, wall, detail, dueDay, income, spend, overdrafts90,
       onTime: rate(cells) ?? 0, rentOn: rate(rentRow), billsOn: rate(billCells),
       late: cells.filter(s => s === "y").length, missed: cells.filter(s => s === "r").length,
       payments: cells.length, mean, cv: mean ? sd / mean : 1, left,
@@ -312,7 +445,21 @@ const ThinFile = (() => {
     return { needed: true, steps, final: score(cur).total };
   }
 
-  return { parseCSV, redact, sortRules, applySort, check, score, coach, merchantKey, CATS };
+  // ---------- Report ID ----------
+  // A fingerprint of exactly what the agents saw (the redacted rows). Two people with
+  // the same history get the same ID, whatever their names.
+  function fingerprint(rows) {
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    const s = rows.map(r => `${r.date}|${r.desc}|${r.amount}`).join("\n");
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+      h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
+    }
+    return "TF-" + (h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0")).slice(0, 10).toUpperCase();
+  }
+
+  return { parseCSV, redact, sortRules, applySort, check, score, coach, fingerprint, merchantKey, CATS };
 })();
 
 
@@ -320,23 +467,37 @@ const SAMPLES={"priya": {"name": "Priya Patel", "from": "India", "tag": "18 mont
 </script>
 <script>
 const T=ThinFile;
-const app=document.getElementById("app");
+const app=document.getElementById("app"), tip=document.getElementById("tip");
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+const money2=n=>"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct=x=>x==null?"–":Math.round(x*100)+"%";
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const monLabel=m=>MON[Number(m.slice(5))-1]+(m.slice(5)==="01"||m===state.months0?" '"+m.slice(2,4):"");
-const monHead=m=>MON[Number(m.slice(5))-1]+"<br>"+(m.slice(5)==="01"||m===state.months0?"'"+m.slice(2,4):"&nbsp;");
-const VERDICT={good:"Reliable payer ✅",warn:"Not yet 🟡",bad:"Not ready ❌"};
+const VERDICT={good:"Reliable payer",warn:"Not yet",bad:"Not ready"};
 const TWINS=[["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"],["Aisha Rahman","Bangladesh"]];
-const head=`<div class="logo"><i><b></b><b></b><b></b></i>ThinFile</div>`;
-const foot=`<p class="foot">Demo. Sample data is made up. Not a credit decision.</p>`;
+const CAT={income:"Income",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt",subscription:"Subscr.",spending:"Spending",savings:"Savings",fee:"Bank fee"};
+const SHIELD=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>`;
+const FOLDER=`<svg viewBox="0 0 26 22" fill="none"><path d="M1 4a2 2 0 012-2h6l3 3h11a2 2 0 012 2v12a2 2 0 01-2 2H3a2 2 0 01-2-2V4z" fill="currentColor"/><circle cx="8" cy="13" r="2.2" fill="var(--good)"/><circle cx="13.5" cy="13" r="2.2" fill="var(--good)"/><circle cx="19" cy="13" r="2.2" fill="var(--warn)"/></svg>`;
+const sleep=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
 let state={};
+
+// Every screen change goes through here so it animates.
+function go(render){
+  hideTip();
+  const done=()=>{render();window.scrollTo({top:0,behavior:"instant"})};
+  if(document.startViewTransition&&!reduce)document.startViewTransition(done);
+  else{done();app.classList.remove("enter");void app.offsetWidth;app.classList.add("enter")}
+}
+const bar=()=>`<div class="bar"><button class="logo" id="home">${FOLDER}ThinFile</button><span class="label">Proof for people without a credit score</span></div>`;
+const foot=`<p class="foot">Demo · sample people and data are made up · not a credit decision</p>`;
+function wireHome(){const b=document.getElementById("home");if(b)b.onclick=()=>go(home)}
 
 // ---------- AI helpers (Claude, on the viewer's own account) ----------
 const samplePromise=(async()=>{try{return await window.claude?.use?.("sample")}catch{return null}})();
-async function getSample(){return Promise.race([samplePromise,new Promise(r=>setTimeout(()=>r(null),4000))])}
+const getSample=()=>Promise.race([samplePromise,new Promise(r=>setTimeout(()=>r(null),4000))]);
 let aiOff=false;
+const OFF=["not_granted","sampling_disabled","not_declared","capability_disabled"];
 
 async function aiSort(unknown){
   const sample=await getSample();
@@ -351,7 +512,7 @@ Reply with only a JSON object mapping each merchant exactly as written to {"cat"
 
 ${list}`,{modelTier:"quick"});
     return {map:res&&typeof res==="object"?res:{},used:true};
-  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return {map:{},used:false,err:e.code}}
+  }catch(e){if(OFF.includes(e.code))aiOff=true;return {map:{},used:false}}
 }
 
 async function aiCoach(m,sc,plan){
@@ -364,179 +525,336 @@ async function aiCoach(m,sc,plan){
   try{
     const r=await sample.json(
 `You are the Coach in ThinFile, an app that turns bank history into proof someone pays on time. The score and verdict below were computed by fixed code; do not change them.
-Write for the applicant in plain, warm, direct English. No jargon (never say DTI, NSF, underwriting, FICO). No names, no assumptions about background.
-Reply with only JSON: {"lender": one factual sentence a lender reads first (max 25 words), "applicant": 2 short sentences explaining the result, "tip": one concrete habit tip that supports the fix plan, or null if none needed}.
+Write in plain, warm, direct English. No jargon (never say DTI, NSF, underwriting, FICO). No names, no assumptions about background.
+Reply with only JSON: {"lender": one factual sentence a lender reads first (max 25 words), "applicant": 2 short sentences explaining the result to the applicant, "tip": one concrete habit tip that supports the fix plan, or null if no fix is needed}.
 
 Facts: ${JSON.stringify(facts)}`,{modelTier:"quick"});
     return r&&typeof r.lender==="string"?r:null;
-  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return null}
+  }catch(e){if(OFF.includes(e.code))aiOff=true;return null}
 }
 
-// ---------- Plain-English sentence when AI is not available ----------
 function ruleSentence(m){
   const parts=[];
   if(m.rentAmount&&m.rentStreak>=6)parts.push(`Paid ${money(m.rentAmount)} rent on time for ${m.rentStreak} straight months.`);
-  else if(m.rentOn!=null)parts.push(`Rent paid on time ${pct(m.rentOn)} of months.`);
-  if(m.left<0)parts.push(`Spending has been higher than income on average.`);
-  if(m.overdrafts90===0)parts.push("Never overdrawn in the last 90 days.");
-  else parts.push(`${m.overdrafts90} overdraft fee${m.overdrafts90>1?"s":""} in the last 90 days.`);
+  else if(m.rentOn!=null)parts.push(`Rent paid on time in ${pct(m.rentOn)} of months.`);
+  if(m.left<0)parts.push("Spending has been higher than income on average.");
+  parts.push(m.overdrafts90===0?"Never overdrawn in the last 90 days.":`${m.overdrafts90} overdraft fee${m.overdrafts90>1?"s":""} in the last 90 days.`);
   return parts.join(" ");
 }
 
-// ---------- Pipeline ----------
 function pipeline(raw,applicant,aiMap){
   const red=T.redact(raw,applicant);
-  const s=T.sortRules(red.rows);
-  const sorted=T.applySort(s.sorted,aiMap);
+  const sorted=T.applySort(T.sortRules(red.rows).sorted,aiMap);
   const m=T.check(sorted);
-  return {red,s,sorted,m,sc:T.score(m),plan:T.coach(T.check(sorted))};
+  return {red,sorted,m,sc:T.score(m),id:T.fingerprint(red.rows)};
 }
 
-// ---------- Screens ----------
+// Rule-only previews for the sample cards and the hero demo.
+const PREVIEW={};
+for(const [k,p] of Object.entries(SAMPLES))PREVIEW[k]=pipeline(T.parseCSV(p.csv),{name:p.name},{});
+
+// ---------- Wall ----------
+const monHead=(m,i)=>MON[Number(m.slice(5))-1]+"<br>"+(i===0||m.slice(5)==="01"?"'"+m.slice(2,4):"&nbsp;");
+function wall(m,{maxMonths,interactive=true}={}){
+  const start=maxMonths?Math.max(0,m.months.length-maxMonths):0;
+  const months=m.months.slice(start);
+  const cols=`grid-template-columns:auto repeat(${months.length},minmax(22px,1fr))`;
+  return `<div class="wallbox"><div class="wall" style="min-width:${110+months.length*24}px">
+  <div class="r" style="${cols}"><span></span>${months.map((x,i)=>`<span class="m">${monHead(x,i)}</span>`).join("")}</div>
+  ${Object.entries(m.wall).map(([k,v],ri)=>`<div class="r" style="${cols}"><span class="lbl">${esc(k)}</span>${v.slice(start).map((s,i)=>{
+    const delay=`style="animation-delay:${reduce?0:i*28+ri*60}ms"`;
+    if(!interactive||s==="none")return `<span class="dot ${s}" ${delay}></span>`;
+    return `<button class="dot ${s}" data-l="${esc(k)}" data-i="${i+start}" aria-label="${esc(k)}, ${MON[Number(months[i].slice(5))-1]} ${months[i].slice(0,4)}: ${{g:"on time",y:"late",r:"missed"}[s]}" ${delay}></button>`}).join("")}</div>`).join("")}
+  </div></div>`;
+}
+// Compact dot strip for the file cards (spans only: the card itself is a button).
+function strip(m,n=12){
+  const v=m.wall.Rent?m.wall.Rent.slice(-n):[];
+  return `<div class="strip"><span class="label">Rent · last ${v.length} mo</span><div>${v.map((s,i)=>`<span class="dot ${s}" style="animation-delay:${reduce?0:300+i*30}ms"></span>`).join("")}</div></div>`;
+}
+function wireWall(m){
+  app.querySelectorAll(".dot[data-l]").forEach(d=>{
+    const show=()=>{
+      const l=d.dataset.l,i=Number(d.dataset.i),mo=m.months[i],det=m.detail[l][i],due=m.dueDay[l];
+      const when=`${MON[Number(mo.slice(5))-1]} ${mo.slice(0,4)}`;
+      let body;
+      if(!det)body=`<b>Missed</b><span class="mono">No payment found · usually due on the ${ord(due)}</span>`;
+      else{const dd=`${MON[Number(det.date.slice(5,7))-1]} ${Number(det.date.slice(8))}`;
+        body=`<b>${det.late<=0?"On time":det.late<=3?"On time (grace period)":`${det.late} days late`}</b><span class="mono">Paid ${dd} · ${money2(det.amount)} · due the ${ord(due)}</span>`}
+      tip.innerHTML=`<span class="mono">${esc(l)} · ${when}</span>${body}`;
+      const r=d.getBoundingClientRect();tip.classList.add("show");
+      const w=tip.offsetWidth,h=tip.offsetHeight;
+      tip.style.left=Math.min(innerWidth-w-8,Math.max(8,r.left+r.width/2-w/2))+"px";
+      tip.style.top=(r.top-h-10<8?r.bottom+10:r.top-h-10)+"px";
+    };
+    d.addEventListener("pointerenter",show);d.addEventListener("focus",show);d.addEventListener("click",show);
+    d.addEventListener("pointerleave",hideTip);d.addEventListener("blur",hideTip);
+  });
+}
+function hideTip(){tip.classList.remove("show")}
+addEventListener("scroll",hideTip,{passive:true});
+const ord=n=>n+(n%100>=11&&n%100<=13?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));
+
+// ---------- Home ----------
 function home(){
-  location.hash="";
-  app.innerHTML=`${head}
-  <section><h1>Don't build credit.<br>Prove it.</h1>
-  <p class="lead">Turn your bank history into proof you pay on time, and share it with any lender or landlord.</p></section>
-  <section style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">Try a sample applicant</div>
-  <div class="people">${Object.entries(SAMPLES).map(([k,p])=>`<button class="person" data-k="${k}"><b>${esc(p.name.split(" ")[0])}</b><span>${esc(p.tag)}</span><div class="mini">${p.dots.map(c=>`<u style="background:var(--${c})"></u>`).join("")}</div></button>`).join("")}</div></section>
-  <section class="panel"><h2>Check your own history</h2>
-  <p class="muted" style="margin:0">Paste a bank export (CSV) with columns <b>date, description, amount</b>. Money out is negative. It stays in this page; only unknown merchant names are sent to the AI Sorter.</p>
-  <label class="eyebrow" for="own-name">Your name (optional, to show the Privacy Guard hiding it)</label>
-  <input type="text" id="own-name" placeholder="e.g. Sam Rivera">
-  <textarea id="own-csv" placeholder="date,description,amount,balance&#10;2026-09-01,ZELLE TO LANDLORD RENT,-1200,2310.55&#10;..."></textarea>
-  <div class="row2"><button class="b primary" id="own-run">Check my history</button>
-  <label class="b" for="own-file" style="display:inline-block">Upload CSV</label><input type="file" id="own-file" accept=".csv,text/csv" hidden>
-  <button class="b" id="own-fill">Load an example</button></div>
-  <p class="err" id="own-err" hidden></p></section>
+  if(location.hash)history.replaceState(null,"",location.pathname+location.search);
+  const pr=PREVIEW.priya;
+  const last12=Object.values(pr.m.wall).flatMap(v=>v.slice(-12)).filter(s=>s!=="none");
+  const onTime=last12.filter(s=>s==="g").length;
+  app.innerHTML=`${bar()}
+  <section class="hero">
+    <div>
+      <div class="label">For immigrants, students and gig workers</div>
+      <h1 style="margin-top:14px">Don't build credit. <em>Prove it.</em></h1>
+      <p class="lead">You've paid rent and bills on time for months. ThinFile reads your bank history, finds every on-time payment, and turns it into a report any lender or landlord can check.</p>
+      <div class="ctas"><button class="btn primary" id="try">Open a sample file</button><button class="btn" id="own">Check my own history</button></div>
+    </div>
+    <div class="demo" aria-label="Example: Priya's last 12 months of payments">
+      <div class="head"><span class="label">Priya · last 12 months</span><span class="count"><b>${onTime}</b> of ${last12.length} on time</span></div>
+      ${wall(pr.m,{maxMonths:12,interactive:false})}
+    </div>
+  </section>
+
+  <section id="files" style="display:flex;flex-direction:column;gap:14px">
+    <h2>Open a file</h2>
+    <div class="files">${Object.entries(SAMPLES).map(([k,p],i)=>{
+      const v=PREVIEW[k];
+      return `<button class="file" data-k="${k}" data-tab="FILE ${String(i+1).padStart(2,"0")} · ${v.m.months.length} MO">
+        <div class="who"><b>${esc(p.name.split(" ")[0])}</b><span class="pill ${v.sc.band}">${VERDICT[v.sc.band]}</span></div>
+        <p>${esc(p.tag)}</p>
+        ${strip(v.m)}
+        <span class="open">Open file →</span></button>`}).join("")}</div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <h2>Five checks, in order</h2>
+    <div class="how">
+      <div><span class="label">1 · Code</span><b>Privacy Guard</b><span>Hides your name and the names in transfers before anything else runs.</span></div>
+      <div><span class="label">2 · Rules + AI</span><b>Sorter</b><span>Labels every transaction. Claude handles merchants the rules don't know.</span></div>
+      <div><span class="label">3 · Code</span><b>Checker</b><span>Finds recurring payments and marks each month on time, late or missed.</span></div>
+      <div><span class="label">4 · Code</span><b>Calculator</b><span>Fixed math. The same history always gets the same score.</span></div>
+      <div><span class="label">5 · Code + AI</span><b>Coach</b><span>Finds the smallest change that gets you approved.</span></div>
+    </div>
+  </section>
+
+  <section class="sheet" id="ownbox">
+    <div class="sheet-head"><span class="label">Your history</span><span class="label">CSV · date, description, amount</span></div>
+    <p class="muted">Paste a bank export or upload a CSV. Money out is negative. Your data stays in this page; only unfamiliar merchant names are sent to the AI Sorter.</p>
+    <label class="label" for="own-name">Your name (optional, so you can watch it get hidden)</label>
+    <input type="text" id="own-name" placeholder="Sam Rivera" autocomplete="off">
+    <textarea id="own-csv" placeholder="date,description,amount,balance&#10;2026-09-01,ZELLE TO LANDLORD RENT,-1200.00,2310.55"></textarea>
+    <div class="row"><button class="btn primary" id="own-run">Check my history</button>
+      <label class="btn" for="own-file">Upload CSV</label><input type="file" id="own-file" accept=".csv,text/csv" hidden>
+      <button class="link" id="own-fill">Load an example</button></div>
+    <p class="err" id="own-err" hidden></p>
+  </section>
   ${foot}`;
-  app.querySelectorAll(".person").forEach(b=>b.onclick=()=>run(SAMPLES[b.dataset.k].csv,{name:SAMPLES[b.dataset.k].name,from:SAMPLES[b.dataset.k].from},b.dataset.k));
+  wireHome();
+  document.getElementById("try").onclick=()=>document.getElementById("files").scrollIntoView({behavior:reduce?"auto":"smooth"});
+  document.getElementById("own").onclick=()=>{document.getElementById("ownbox").scrollIntoView({behavior:reduce?"auto":"smooth"});setTimeout(()=>document.getElementById("own-csv").focus({preventScroll:true}),400)};
+  app.querySelectorAll(".file").forEach(b=>b.onclick=()=>{const p=SAMPLES[b.dataset.k];start(p.csv,{name:p.name,from:p.from},b.dataset.k)});
   const ta=document.getElementById("own-csv"),er=document.getElementById("own-err");
   document.getElementById("own-fill").onclick=()=>{ta.value=SAMPLES.marcus.csv;document.getElementById("own-name").value="Marcus Johnson"};
   document.getElementById("own-file").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>ta.value=rd.result;rd.readAsText(f)};
   document.getElementById("own-run").onclick=()=>{
     er.hidden=true;
     try{const rows=T.parseCSV(ta.value);if(rows.length<20)throw new Error("Add at least 3 months of transactions so recurring payments can be found.");
-      run(ta.value,{name:document.getElementById("own-name").value.trim()||"",from:""},null)}
+      start(ta.value,{name:document.getElementById("own-name").value.trim(),from:""},null)}
     catch(e){er.textContent=e.message;er.hidden=false}
   };
 }
 
-const sleep=ms=>new Promise(r=>setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?0:ms));
-async function run(csv,applicant,key){
-  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
+// ---------- Checking ----------
+function start(csv,applicant,key){go(()=>checking(applicant));run(csv,applicant,key)}
+function checking(applicant){
+  const who=applicant.name?applicant.name.split(" ")[0]+"'s":"your";
   const steps=[["Privacy Guard","code"],["Sorter","ai"],["Checker","code"],["Calculator","code"],["Coach","ai"]];
-  app.innerHTML=`${head}<div class="panel"><div class="eyebrow">Checking ${esc(first)} bank history</div>
-  <ol class="steps">${steps.map(([t,k],i)=>`<li id="st${i}"><span class="dot">${i+1}</span><div><b>${t}</b><span class="tag ${k}">${k==="ai"?"AI":"code"}</span><small>Waiting…</small></div></li>`).join("")}</ol></div>`;
-  const step=(i,msg,done=true)=>{const li=document.getElementById("st"+i);li.className=done?"on":"run";li.querySelector("small").textContent=msg};
+  app.innerHTML=`${bar()}
+  <div class="sheet"><div class="sheet-head"><span class="label">Checking ${esc(who)} bank history</span><span class="label" id="ck-count"></span></div>
+  <div class="check"><ol class="steps">${steps.map(([t,k],i)=>`<li id="st${i}"><span class="n">${i+1}</span><div><span class="t">${t}<span class="kind ${k}">${k==="ai"?"AI":"code"}</span></span><small>Waiting</small></div></li>`).join("")}</ol>
+  <div class="tape" aria-hidden="true"><div class="tape-in" id="tape"></div></div></div></div>`;
+  wireHome();
+}
+const stepEl=i=>document.getElementById("st"+i);
+function step(i,msg,done=true){const li=stepEl(i);if(!li)return;li.className=done?"on":"run";li.querySelector("small").textContent=msg}
+
+// Streams real transactions onto the tape. Returns the row elements so later steps can label them.
+async function feed(rows,n){
+  const tape=document.getElementById("tape");if(!tape)return [];
+  const pick=rows.slice(-n);const els=[];
+  for(const r of pick){
+    const el=document.createElement("div");el.className="tx";
+    el.innerHTML=`<span class="d">${r.date.slice(5)}</span><span class="s">${esc(r.desc)}</span><span class="a">${r.amount.toFixed(2)}</span><span class="c">···</span>`;
+    tape.prepend(el);els.unshift({el,r});
+    if(tape.children.length>16)tape.lastChild.remove();
+    await sleep(55);
+  }
+  return els;
+}
+
+async function run(csv,applicant,key){
+  await sleep(380);
   try{
     const raw=T.parseCSV(csv);
-    step(0,"Hiding names…",false);await sleep(500);
+    const cnt=document.getElementById("ck-count");if(cnt)cnt.textContent=`${raw.length} transactions`;
+    step(0,"Reading transactions",false);
+    const els=await feed(raw,16);
     const red=T.redact(raw,applicant);
-    step(0,`Hid ${red.names} name${red.names===1?"":"s"} from ${raw.length} transactions. Applicant name and country never passed on ✔`);
-    step(1,"Sorting with rules…",false);await sleep(350);
+    // show redaction on the tape
+    els.forEach(({el,r})=>{const i=raw.indexOf(r),d=red.rows[i].desc;if(d!==r.desc){const s=el.querySelector(".s");s.textContent=d;s.classList.add("hid")}});
+    await sleep(350);
+    step(0,`Hid ${red.names} name${red.names===1?"":"s"}. Your name and country are never passed on.`);
+
+    step(1,"Sorting with rules",false);
     const s=T.sortRules(red.rows);
     let ai={map:{},used:false};
-    if(s.unknown.length){step(1,`Rules sorted ${raw.length-s.sorted.filter(r=>!r.cat).length}. Asking Claude about ${s.unknown.length} unfamiliar merchant${s.unknown.length>1?"s":""}…`,false);ai=await aiSort(s.unknown)}
+    if(s.unknown.length){step(1,`Rules know most of these. Asking Claude about ${s.unknown.length} unfamiliar merchant${s.unknown.length>1?"s":""}`,false);ai=await aiSort(s.unknown)}
     const sorted=T.applySort(s.sorted,ai.map);
+    for(const {el,r} of els){const sr=sorted[raw.indexOf(r)];const c=el.querySelector(".c");c.textContent=sr.label||CAT[sr.cat];c.className="c set "+sr.cat;await sleep(40)}
     const byAI=sorted.filter(r=>r.by==="ai").length;
-    step(1,`${sorted.filter(r=>r.by==="rules").length} sorted by rules`+(ai.used?`, ${byAI} by AI`:s.unknown.length?`, ${s.unknown.length} merchant${s.unknown.length>1?"s":""} set to everyday spending (AI unavailable)`:""));
-    step(2,"Finding recurring payments…",false);await sleep(450);
+    step(1,`${sorted.filter(r=>r.by==="rules").length} sorted by rules`+(ai.used?`, ${byAI} by Claude`:s.unknown.length?`, ${s.unknown.length} unfamiliar merchant${s.unknown.length>1?"s":""} counted as spending (AI off)`:""));
+
+    step(2,"Looking for payments that repeat every month",false);await sleep(500);
     const m=T.check(sorted);
-    step(2,`Found ${Object.keys(m.wall).length} recurring payments over ${m.months.length} months · ${pct(m.onTime)} on time · ${m.overdrafts90} overdraft fees in 90 days`);
-    step(3,"Scoring…",false);await sleep(400);
+    step(2,`${Object.keys(m.wall).length} recurring payments over ${m.months.length} months · ${pct(m.onTime)} on time · ${m.overdrafts90} overdraft fee${m.overdrafts90===1?"":"s"} in 90 days`);
+
+    step(3,"Scoring",false);await sleep(450);
     const sc=T.score(m);
-    step(3,`Reliability Score ${sc.total}. Fixed math: same history always gives the same score`);
+    step(3,`Reliability Score ${sc.total} of 100`);
+
     const plan=T.coach(m);
-    step(4,plan.needed?"Working out the fastest path to approval…":"Writing the summary…",false);
+    step(4,plan.needed?"Finding the fastest path to approval":"Writing the summary",false);
     const note=await aiCoach(m,sc,plan);
-    step(4,(plan.needed?`Fastest path: ${plan.steps.length} change${plan.steps.length>1?"s":""} → score ${plan.final}`:"No fixes needed")+(note?" · summary written by AI":" · summary from rules (AI unavailable)"));
-    await sleep(500);
-    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,months0:m.months[0]};
-    if(key)location.hash=key;
-    report(false);
+    step(4,(plan.needed?`${plan.steps.length} change${plan.steps.length>1?"s":""} gets you to ${plan.final}`:"No changes needed")+(note?" · summary by Claude":" · summary from rules (AI off)"));
+    await sleep(600);
+    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,id:T.fingerprint(red.rows)};
+    if(key)history.replaceState(null,"","#"+key);
+    go(()=>report(false));
   }catch(e){
-    app.insertAdjacentHTML("beforeend",`<div class="panel"><p class="err">${esc(e.message||"Something went wrong reading that file.")}</p><button class="b" id="bk">Go back</button></div>`);
-    document.getElementById("bk").onclick=home;
+    const box=document.querySelector(".sheet");
+    if(box)box.insertAdjacentHTML("beforeend",`<p class="err">${esc(e.message||"Something went wrong reading that file.")}</p><div><button class="btn" id="bk">Go back</button></div>`);
+    const bk=document.getElementById("bk");if(bk)bk.onclick=()=>go(home);
   }
 }
 
-function wall(m){
-  const cols=`grid-template-columns:auto repeat(${m.months.length},minmax(22px,1fr))`;
-  const min=`min-width:${110+m.months.length*24}px`;
-  const word={g:"on time",y:"late",r:"missed",none:"no payment expected"};
-  return `<div class="wallbox"><div class="wall" style="${min}">
-  <div class="r" style="${cols}"><span></span>${m.months.map(x=>`<span class="m">${monHead(x)}</span>`).join("")}</div>
-  ${Object.entries(m.wall).map(([k,v],ri)=>`<div class="r" style="${cols}"><span class="lbl">${esc(k)}</span>${v.map((s,i)=>`<span class="d ${s}" style="animation-delay:${i*35+ri*70}ms" title="${esc(k)} · ${monLabel(m.months[i])}: ${word[s]}"></span>`).join("")}</div>`).join("")}
-  </div></div>
-  <div class="legend"><span style="--c:var(--good)">On time</span><span style="--c:var(--warn)">Late</span><span style="--c:var(--bad)">Missed</span></div>`;
+// ---------- Report ----------
+const COLORS=["var(--ink)","var(--accent)","var(--good)","var(--muted)"];
+function scoreBlock(sc){
+  return `<div class="scorebox">
+    <div><div class="label">Reliability score</div><div class="big"><span id="count">0</span><small>/100</small></div></div>
+    <div><div class="stack" role="img" aria-label="Score breakdown">${sc.factors.map((f,i)=>`<i style="width:${f.pts}%;animation-delay:${600+i*120}ms"></i>`).join("")}</div>
+    <div class="keys">${sc.factors.map((f,i)=>`<span style="--c:${COLORS[i]}"><em>${f.name}</em><b>${f.pts.toFixed(1)}/${f.max}</b></span>`).join("")}</div></div>
+  </div>`;
 }
+function countUp(to){
+  const el=document.getElementById("count");if(!el)return;
+  if(reduce){el.textContent=to;return}
+  const t0=performance.now(),dur=900;
+  const tick=t=>{const p=Math.min(1,(t-t0)/dur);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};
+  setTimeout(()=>requestAnimationFrame(tick),250);
+}
+function figs(m){
+  return `<div class="figs"><div><strong>${pct(m.rentOn)}</strong><span>rent on time</span></div>
+  <div><strong>${pct(m.billsOn)}</strong><span>bills on time</span></div>
+  <div><strong>${m.months.length}</strong><span>months of history</span></div>
+  <div><strong>${m.overdrafts90}</strong><span>overdrafts, last 90 days</span></div></div>`;
+}
+const period=m=>`${MON[Number(m.months[0].slice(5))-1]} ${m.months[0].slice(0,4)} – ${MON[Number(m.months.at(-1).slice(5))-1]} ${m.months.at(-1).slice(0,4)}`;
+const stamp=sc=>`<div class="stamp ${sc.band}" aria-hidden="true"><small>ThinFile</small>${VERDICT[sc.band]}</div>`;
 
 function how(){
   const {sc,sorted,red}=state;
-  const catName={income:"Income",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt payment",subscription:"Subscription",spending:"Spending",savings:"Savings",fee:"Bank fee"};
-  return `<details><summary>See how we decided</summary>
-  <div style="display:flex;flex-direction:column;gap:10px">
-  ${sc.factors.map(f=>`<div class="factor"><span>${f.name}</span><div class="bar"><i style="width:${f.pts/f.max*100}%"></i></div><span class="v">${f.pts.toFixed(1)}/${f.max}</span></div>`).join("")}
-  <p class="muted" style="margin:4px 0">Weights are fixed in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75+ is Reliable payer, 50–74 is Not yet. The Privacy Guard hid ${red.names} names before anything else ran.</p>
-  <div class="eyebrow">What the Sorter saw (latest 40)</div>
+  return `<details><summary>How we decided</summary>
+  <div style="display:flex;flex-direction:column;gap:12px">
+  <p class="muted">The score uses fixed weights in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75 or more is a Reliable payer, 50 to 74 is Not yet. The Privacy Guard hid ${red.names} name${red.names===1?"":"s"} before any other step ran. Claude only labels unfamiliar merchants and writes the summary; it never sets the score.</p>
+  <div class="label">What the Sorter saw · latest 40</div>
   <div class="tbl"><table><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Label</th><th>By</th></tr></thead><tbody>
-  ${sorted.slice(-40).reverse().map(r=>`<tr><td>${r.date}</td><td>${esc(r.desc)}</td><td class="amt">${r.amount.toFixed(2)}</td><td>${esc(r.label||catName[r.cat])}</td><td>${r.by==="ai"?'<span class="tag ai">AI</span>':r.by==="rules"?'<span class="tag code">rules</span>':'<span class="tag code">default</span>'}</td></tr>`).join("")}
+  ${sorted.slice(-40).reverse().map(r=>`<tr><td>${r.date}</td><td>${esc(r.desc)}</td><td class="amt">${r.amount.toFixed(2)}</td><td>${esc(r.label||CAT[r.cat])}</td><td><span class="by ${r.by==="ai"?"ai":""}">${r.by==="ai"?"Claude":r.by}</span></td></tr>`).join("")}
   </tbody></table></div></div></details>`;
 }
 
 function report(lender){
-  const {m,sc,plan,note,applicant,key}=state;
-  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
-  const nums=`<div class="nums"><div class="num"><strong>${pct(m.rentOn)}</strong><span>rent on time</span></div>
-    <div class="num"><strong>${pct(m.billsOn)}</strong><span>bills on time</span></div>
-    <div class="num"><strong>${m.months.length}</strong><span>months of history</span></div></div>`;
-  const lead=note?`<p class="ai-note"><small>Summary · AI</small>${esc(note.lender)}</p>`:`<p class="sentence">${esc(ruleSentence(m))}</p>`;
-  const verdict=`<div class="verdict"><span class="badge ${sc.band}">${VERDICT[sc.band]}</span><span class="score"><strong>${sc.total}</strong>/ 100</span></div>`;
+  const {m,sc,plan,note,applicant,key,id}=state;
+  const who=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
+  const summary=note?`<div><span class="byline">Summary · written by Claude</span><p class="summary">${esc(note.lender)}</p></div>`:`<p class="summary">${esc(ruleSentence(m))}</p>`;
+  const head=`<div class="sheet-head"><span class="label">Reliability report · <b>${id}</b></span><span class="label">${period(m)}</span></div>`;
+  const legend=`<div class="legend"><span style="--c:var(--good)">On time</span><span style="--c:var(--warn)">Late</span><span style="--c:var(--bad)">Missed</span><span class="tipnote">Tap a dot for the payment</span></div>`;
   if(lender){
-    app.innerHTML=`${head}<button class="back" id="bk">← Back to ${esc(first.toLowerCase()==="your"?"your":first)} report</button>
-    <div class="panel lender"><div class="eyebrow">Reliability Report · shared with you</div>${verdict}${wall(m)}${nums}${lead}
-    <div class="banner">🛡️ Fair check passed. Name and background were hidden during review.</div></div>
-    <div class="panel">${how()}</div>${foot}`;
-    document.getElementById("bk").onclick=()=>report(false);
-    if(key)location.hash="lender-"+key;
+    app.innerHTML=`${bar()}<div><button class="link" id="bk">← Back to ${esc(who==="Your"?"your":who)} report</button></div>
+    <div class="sheet shake"><span class="shared">Shared copy</span>${head}${stamp(sc)}${scoreBlock(sc)}${wall(m)}${legend}${figs(m)}${summary}
+    <div class="verdict-line good">${SHIELD}Fair check passed. Name and background were hidden during review.</div>
+    <p class="label">Verify: report ${id} covers ${state.raw.length} transactions, ${period(m)}</p></div>
+    <div class="sheet">${how()}</div>${foot}`;
+    wireHome();document.getElementById("bk").onclick=()=>go(()=>report(false));
+    wireWall(m);countUp(sc.total);
+    if(key)history.replaceState(null,"","#lender-"+key);
     return;
   }
   const action=!plan.needed
-    ?`<div class="btns"><button class="b primary" id="share">Share my proof</button></div>`
-    :`<div class="fix ${sc.band==="bad"?"bad":""}"><h3>Your fix</h3><ol>${plan.steps.map(s=>`<li>${esc(s.say)} <b>→ score ${s.after}</b></li>`).join("")}</ol>
-      <p style="margin:0">${plan.final>=75?"Do this and you'll be a <b>Reliable payer</b>.":`That gets you to ${plan.final}. Keep it up for another quarter to reach 75.`}</p>
-      ${note&&note.tip?`<p class="ai-note" style="margin-top:4px"><small>Tip · AI</small>${esc(note.tip)}</p>`:""}</div>`;
-  app.innerHTML=`${head}<button class="back" id="bk">← Start over</button>
-  <div class="panel"><div class="eyebrow">${esc(first)} Reliability Report</div>${verdict}${wall(m)}${nums}${lead}
-  ${note&&note.applicant?`<p class="muted" style="margin:0">${esc(note.applicant)}</p>`:""}${action}</div>
-  <div class="panel"><div class="verdict"><h2>🛡️ Fair check</h2><button class="b" id="prove">Prove it</button></div>
-  <p class="muted" style="margin:0">ThinFile never sees your name or where you're from. Run this exact bank history under 5 other identities and compare.</p><div id="twins"></div></div>
-  <div class="panel">${how()}</div>${foot}`;
-  document.getElementById("bk").onclick=home;
-  const sh=document.getElementById("share");if(sh)sh.onclick=()=>report(true);
+    ?`<div class="row" style="border-top:2px solid var(--ink);padding-top:16px;justify-content:space-between"><p class="muted" style="max-width:30em">${note?esc(note.applicant):"Your history already proves you pay on time. Share this report with a lender or landlord."}</p><button class="btn primary" id="share">Share my proof →</button></div>`
+    :`<div class="plan"><div><h3>Your fastest path to approval</h3>
+      <ol>${plan.steps.map(s=>`<li>${esc(s.say)} <b>→ ${s.after}</b></li>`).join("")}</ol>
+      <p class="muted" style="margin-top:10px">${plan.final>=75?"Do this and you'll be a Reliable payer.":`That gets you to ${plan.final}. Keep it up another quarter to reach 75.`}</p>
+      ${note&&note.tip?`<div style="margin-top:12px"><span class="byline">Tip · Claude</span><p>${esc(note.tip)}</p></div>`:""}</div>
+      ${whatIf(m)}</div>`;
+  app.innerHTML=`${bar()}<div><button class="link" id="bk">← All files</button></div>
+  <div class="sheet shake">${head}${stamp(sc)}${scoreBlock(sc)}
+  ${wall(m)}${legend}${figs(m)}${summary}
+  ${note&&note.applicant&&plan.needed?`<p class="muted">${esc(note.applicant)}</p>`:""}${action}</div>
+  <div class="sheet"><div class="row" style="justify-content:space-between"><div><h2>Fair check</h2><p class="muted" style="margin-top:6px;max-width:34em">Run this exact bank history under five other identities. If ThinFile is fair, every score and every report ID matches.</p></div><button class="btn" id="prove">Run fair check</button></div><div id="twins"></div></div>
+  <div class="sheet">${how()}</div>${foot}`;
+  wireHome();
+  document.getElementById("bk").onclick=()=>go(home);
+  const sh=document.getElementById("share");if(sh)sh.onclick=()=>go(()=>report(true));
   document.getElementById("prove").onclick=prove;
+  wireWall(m);countUp(sc.total);
+  if(plan.needed)wireWhatIf(m);
 }
 
-// Re-runs the whole pipeline with a different identity: the applicant name is swapped
+// ---------- What-if ----------
+function whatIf(m){
+  return `<div class="whatif" id="wi"><div class="res"><div><div class="label">What if…</div><div class="big" id="wi-score">${state.sc.total}</div></div><span class="pill ${state.sc.band}" id="wi-pill">${VERDICT[state.sc.band]}</span></div>
+  <div class="slider"><label for="wi-od">Overdrafts in 90 days</label><output id="wi-od-o">${m.overdrafts90}</output><input type="range" id="wi-od" min="0" max="${Math.max(3,m.overdrafts90)}" step="1" value="${m.overdrafts90}"></div>
+  <div class="slider"><label for="wi-left">Money left over each month</label><output id="wi-left-o">${pct(m.left)}</output><input type="range" id="wi-left" min="-30" max="40" step="1" value="${Math.round(m.left*100)}"></div>
+  <div class="slider"><label for="wi-on">Bills paid on time</label><output id="wi-on-o">${pct(m.onTime)}</output><input type="range" id="wi-on" min="60" max="100" step="1" value="${Math.round(m.onTime*100)}"></div></div>`;
+}
+function wireWhatIf(m){
+  const od=document.getElementById("wi-od"),lf=document.getElementById("wi-left"),on=document.getElementById("wi-on");
+  const upd=()=>{
+    const sim=T.score({...m,overdrafts90:Number(od.value),left:Number(lf.value)/100,onTime:Number(on.value)/100});
+    document.getElementById("wi-od-o").textContent=od.value;
+    document.getElementById("wi-left-o").textContent=lf.value+"%";
+    document.getElementById("wi-on-o").textContent=on.value+"%";
+    document.getElementById("wi-score").textContent=sim.total;
+    const p=document.getElementById("wi-pill");p.className="pill "+sim.band;p.textContent=VERDICT[sim.band];
+  };
+  [od,lf,on].forEach(x=>x.addEventListener("input",upd));
+}
+
+// ---------- Fair check ----------
+// Re-runs the whole pipeline with a different identity: the applicant name is swapped,
 // and so is any family name inside transfer descriptions.
-function prove(){
-  const {raw,applicant,aiMap,sc}=state;
+async function prove(){
+  const {raw,applicant,aiMap,sc,id}=state;
+  const btn=document.getElementById("prove");btn.disabled=true;btn.textContent="Running…";
   const last=(applicant.name||"").split(" ").slice(-1)[0].toUpperCase();
   const people=[[applicant.name||"You",applicant.from||"—"],...TWINS];
-  const rows=people.map(([nm,fr],i)=>{
+  const box=document.getElementById("twins");box.innerHTML=`<div class="twins" id="tw"></div>`;
+  const tw=document.getElementById("tw");let same=true;
+  for(const [i,[nm,fr]] of people.entries()){
     const twinLast=nm.split(" ").slice(-1)[0].toUpperCase();
     const swapped=i===0||!last?raw:raw.map(r=>({...r,desc:r.desc.split(last).join(twinLast)}));
     const out=pipeline(swapped,{name:nm,from:fr},aiMap);
-    return {nm,fr,score:out.sc.total,band:out.sc.band};
-  });
-  const same=rows.every(r=>r.score===sc.total);
-  document.getElementById("twins").innerHTML=`<div class="twins">${rows.map(r=>`<div class="twin"><span>${esc(r.nm)} · ${esc(r.fr)}</span><span class="s">${r.score}</span><span>${VERDICT[r.band]}</span></div>`).join("")}</div>
-  <div class="banner ${same?"":"warn"}" style="margin-top:10px">${same?"Same history. Same result. Fair by design.":"Scores differ. Something in the data revealed identity."}</div>`;
+    if(out.sc.total!==sc.total||out.id!==id)same=false;
+    tw.insertAdjacentHTML("beforeend",`<div class="twin"><span>${esc(nm)} <span class="muted">· ${esc(fr)}</span></span><span class="id">${out.id}</span><span class="s">${out.sc.total}</span><span class="pill ${out.sc.band}">${VERDICT[out.sc.band]}</span></div>`);
+    await sleep(160);
+  }
+  box.insertAdjacentHTML("beforeend",`<div class="verdict-line ${same?"good":"warn"}" style="margin-top:14px">${SHIELD}${same?"Same history, same score, same report ID. The agents never saw who you are.":"Results differ. Something in the data revealed identity."}</div>`);
+  btn.disabled=false;btn.textContent="Run again";
 }
 
-const h=location.hash.replace("#","");
-const k=h.replace(/^lender-/,"");
-if(SAMPLES[k]){const p=SAMPLES[k];run(p.csv,{name:p.name,from:p.from},k).then(()=>{if(h.startsWith("lender-")&&state.key===k)report(true)})}
+// ---------- Boot ----------
+const h=location.hash.replace("#",""),k=h.replace(/^lender-/,"");
+if(SAMPLES[k]){const p=SAMPLES[k];checking({name:p.name});run(p.csv,{name:p.name,from:p.from},k).then(()=>{if(h.startsWith("lender-")&&state.key===k)report(true)})}
 else home();
 </script>
