@@ -1,0 +1,336 @@
+<title>ThinFile</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow app column; report reads verdict -> wall -> numbers -> action */
+:root{
+  --bg:#f6f8f7; --card:#ffffff; --fg:#0f1f3a; --muted:#5b6b80; --line:#dde5e2;
+  --good:#0f9d6b; --goodsoft:#d7f3e7; --warn:#c98a12; --warnsoft:#fbefd4; --bad:#d4483b; --badsoft:#fadcd8;
+  --empty:#e8edeb; --ai:#5b5bd6; --aisoft:#e7e7fb;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
+  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
+  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
+  --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
+  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:780px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.1rem,7vw,3.3rem);line-height:1.02;font-weight:800}
+h2{font-size:1.45rem;font-weight:800}
+h3{font-size:1.1rem}
+.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:10px}
+.logo i{display:flex;gap:4px}.logo i b{width:12px;height:12px;border-radius:50%;background:var(--good)}.logo i b:last-child{background:var(--warn)}
+.lead{color:var(--muted);font-size:1.1rem;max-width:34em;margin:10px 0 0}
+.eyebrow{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.person{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s}
+.person:hover{transform:translateY(-2px);border-color:var(--good)}
+.person:focus-visible{outline:3px solid var(--good);outline-offset:2px}
+.person b{font-family:var(--display);font-size:1.25rem}
+.person span{color:var(--muted);font-size:.95rem}
+.mini{display:flex;gap:3px;margin-top:6px}.mini u{width:9px;height:9px;border-radius:50%}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+textarea,input[type=text]{font:inherit;font-size:.9rem;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg)}
+textarea{font-family:var(--mono);font-size:.8rem;min-height:150px;resize:vertical}
+textarea:focus,input:focus{outline:2px solid var(--good);outline-offset:1px}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.err{color:var(--bad);font-weight:700;margin:0}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.steps li{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;opacity:.35;transition:opacity .3s}
+.steps li.on,.steps li.run{opacity:1}
+.steps .dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.steps li.run .dot{border-color:var(--good);animation:pulse 1s infinite}
+.steps li.on .dot{background:var(--good);border-color:var(--good);color:#fff}
+@keyframes pulse{50%{box-shadow:0 0 0 6px var(--goodsoft)}}
+.steps b{display:inline}.steps small{display:block;color:var(--muted);font-size:.92rem}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
+.tag.ai{background:var(--aisoft);color:var(--ai)}.tag.code{background:var(--empty);color:var(--muted)}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
+.badge{font-family:var(--display);font-weight:800;font-size:1.45rem;padding:8px 16px;border-radius:999px}
+.badge.good{background:var(--goodsoft);color:var(--good)}.badge.warn{background:var(--warnsoft);color:var(--warn)}.badge.bad{background:var(--badsoft);color:var(--bad)}
+.score{font-family:var(--mono);color:var(--muted);font-size:.95rem}
+.score strong{font-family:var(--display);color:var(--fg);font-size:2.2rem;margin-right:4px}
+.wallbox{overflow-x:auto;padding-bottom:4px}
+.wall{display:grid;gap:7px 0}
+.wall .r{display:grid;align-items:center}
+.wall .lbl{font-size:.85rem;color:var(--muted);font-weight:500;white-space:nowrap;padding-right:10px}
+.wall .m{font-family:var(--mono);font-size:.6rem;line-height:1.25;color:var(--muted);text-align:center;white-space:nowrap}
+.wall .d{width:18px;height:18px;border-radius:50%;margin:auto;background:var(--empty);transform:scale(.2);opacity:0;animation:pop .35s forwards}
+.d.g{background:var(--good)}.d.y{background:var(--warn)}.d.r{background:var(--bad)}.d.none{background:transparent;border:1px dashed var(--line)}
+@keyframes pop{to{transform:scale(1);opacity:1}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.num{border-top:2px solid var(--line);padding-top:8px;min-width:0}
+.num strong{font-family:var(--display);font-size:clamp(1.5rem,6vw,2.2rem);display:block;font-variant-numeric:tabular-nums}
+.num span{color:var(--muted);font-size:.86rem}
+.sentence{font-size:1.12rem;font-weight:500;margin:0}
+.ai-note{border-left:3px solid var(--ai);padding:4px 0 4px 12px;color:var(--fg);margin:0}
+.ai-note small{display:block;color:var(--ai);font-weight:700;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.fix{background:var(--warnsoft);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.fix.bad{background:var(--badsoft)}
+.fix ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+button.b{font:inherit;font-weight:700;border-radius:12px;padding:11px 18px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.b.primary{background:var(--good);border-color:var(--good);color:#fff}
+button.b:disabled{opacity:.5;cursor:default}
+button.b:focus-visible{outline:3px solid var(--good);outline-offset:2px}
+.twins{display:flex;flex-direction:column;gap:6px}
+.twin{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:9px 12px;border-radius:10px;background:var(--bg);align-items:center;font-variant-numeric:tabular-nums}
+.twin .s{font-family:var(--mono);font-weight:700}
+.banner{background:var(--goodsoft);color:var(--good);font-weight:700;padding:12px 14px;border-radius:12px}
+.banner.warn{background:var(--warnsoft);color:var(--warn)}
+details summary{cursor:pointer;font-weight:700;font-family:var(--display);font-size:1.1rem}
+details[open] summary{margin-bottom:12px}
+.factor{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;align-items:center;font-size:.92rem}
+.bar{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}.bar i{display:block;height:100%;background:var(--good)}
+.factor .v{font-family:var(--mono);text-align:right}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;max-height:280px}
+table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--card);color:var(--muted);font-weight:700}
+td.amt{text-align:right;font-family:var(--mono)}
+.muted{color:var(--muted)}
+.lender{border:2px solid var(--fg)}
+.foot{color:var(--muted);font-size:.82rem;text-align:center;margin:0}
+.back{all:unset;cursor:pointer;color:var(--muted);font-weight:700}
+.back:focus-visible{outline:2px solid var(--good)}
+@media (max-width:480px){.factor{grid-template-columns:110px 1fr 54px}.panel{padding:18px}}
+@media (prefers-reduced-motion:reduce){.wall .d{animation:none;transform:none;opacity:1}.steps li.run .dot{animation:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/*ENGINE*/
+const SAMPLES=/*DATA*/;
+</script>
+<script>
+const T=ThinFile;
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+const pct=x=>x==null?"–":Math.round(x*100)+"%";
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const monLabel=m=>MON[Number(m.slice(5))-1]+(m.slice(5)==="01"||m===state.months0?" '"+m.slice(2,4):"");
+const monHead=m=>MON[Number(m.slice(5))-1]+"<br>"+(m.slice(5)==="01"||m===state.months0?"'"+m.slice(2,4):"&nbsp;");
+const VERDICT={good:"Reliable payer ✅",warn:"Not yet 🟡",bad:"Not ready ❌"};
+const TWINS=[["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"],["Aisha Rahman","Bangladesh"]];
+const head=`<div class="logo"><i><b></b><b></b><b></b></i>ThinFile</div>`;
+const foot=`<p class="foot">Demo. Sample data is made up. Not a credit decision.</p>`;
+let state={};
+
+// ---------- AI helpers (Claude, on the viewer's own account) ----------
+const samplePromise=(async()=>{try{return await window.claude?.use?.("sample")}catch{return null}})();
+async function getSample(){return Promise.race([samplePromise,new Promise(r=>setTimeout(()=>r(null),4000))])}
+let aiOff=false;
+
+async function aiSort(unknown){
+  const sample=await getSample();
+  if(!sample||aiOff||!unknown.length)return {map:{},used:false};
+  const list=unknown.slice(0,60).map(u=>`${u.key} | ${u.amount>0?"money in":"money out"}`).join("\n");
+  try{
+    const res=await sample.json(
+`You label bank transactions for a credit-reliability check. For each merchant below, pick one category:
+income (wages or gig pay), transfer_in (money from a person), rent, bill (utilities, phone, internet, insurance), debt (loan, card, lease, buy-now-pay-later), subscription, spending (everyday purchases), savings, fee (bank fees).
+For rent, bill and debt also give a short human label like "Renters insurance" or "Gym loan".
+Reply with only a JSON object mapping each merchant exactly as written to {"cat": string, "label": string|null}.
+
+${list}`,{modelTier:"quick"});
+    return {map:res&&typeof res==="object"?res:{},used:true};
+  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return {map:{},used:false,err:e.code}}
+}
+
+async function aiCoach(m,sc,plan){
+  const sample=await getSample();
+  if(!sample||aiOff)return null;
+  const facts={verdict:VERDICT[sc.band],score:sc.total,months_of_history:m.months.length,recurring_payments:Object.keys(m.wall),
+    on_time_rate:pct(m.onTime),late_payments:m.late,missed_payments:m.missed,rent_on_time_streak_months:m.rentStreak,
+    average_monthly_income:money(m.mean),income_varies_by:pct(m.cv),share_of_income_left_over:pct(m.left),overdraft_fees_last_90_days:m.overdrafts90,
+    computed_fix_plan:plan.steps.map(s=>`${s.say} (score becomes ${s.after})`)};
+  try{
+    const r=await sample.json(
+`You are the Coach in ThinFile, an app that turns bank history into proof someone pays on time. The score and verdict below were computed by fixed code; do not change them.
+Write for the applicant in plain, warm, direct English. No jargon (never say DTI, NSF, underwriting, FICO). No names, no assumptions about background.
+Reply with only JSON: {"lender": one factual sentence a lender reads first (max 25 words), "applicant": 2 short sentences explaining the result, "tip": one concrete habit tip that supports the fix plan, or null if none needed}.
+
+Facts: ${JSON.stringify(facts)}`,{modelTier:"quick"});
+    return r&&typeof r.lender==="string"?r:null;
+  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return null}
+}
+
+// ---------- Plain-English sentence when AI is not available ----------
+function ruleSentence(m){
+  const parts=[];
+  if(m.rentAmount&&m.rentStreak>=6)parts.push(`Paid ${money(m.rentAmount)} rent on time for ${m.rentStreak} straight months.`);
+  else if(m.rentOn!=null)parts.push(`Rent paid on time ${pct(m.rentOn)} of months.`);
+  if(m.left<0)parts.push(`Spending has been higher than income on average.`);
+  if(m.overdrafts90===0)parts.push("Never overdrawn in the last 90 days.");
+  else parts.push(`${m.overdrafts90} overdraft fee${m.overdrafts90>1?"s":""} in the last 90 days.`);
+  return parts.join(" ");
+}
+
+// ---------- Pipeline ----------
+function pipeline(raw,applicant,aiMap){
+  const red=T.redact(raw,applicant);
+  const s=T.sortRules(red.rows);
+  const sorted=T.applySort(s.sorted,aiMap);
+  const m=T.check(sorted);
+  return {red,s,sorted,m,sc:T.score(m),plan:T.coach(T.check(sorted))};
+}
+
+// ---------- Screens ----------
+function home(){
+  location.hash="";
+  app.innerHTML=`${head}
+  <section><h1>Don't build credit.<br>Prove it.</h1>
+  <p class="lead">Turn your bank history into proof you pay on time, and share it with any lender or landlord.</p></section>
+  <section style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">Try a sample applicant</div>
+  <div class="people">${Object.entries(SAMPLES).map(([k,p])=>`<button class="person" data-k="${k}"><b>${esc(p.name.split(" ")[0])}</b><span>${esc(p.tag)}</span><div class="mini">${p.dots.map(c=>`<u style="background:var(--${c})"></u>`).join("")}</div></button>`).join("")}</div></section>
+  <section class="panel"><h2>Check your own history</h2>
+  <p class="muted" style="margin:0">Paste a bank export (CSV) with columns <b>date, description, amount</b>. Money out is negative. It stays in this page; only unknown merchant names are sent to the AI Sorter.</p>
+  <label class="eyebrow" for="own-name">Your name (optional, to show the Privacy Guard hiding it)</label>
+  <input type="text" id="own-name" placeholder="e.g. Sam Rivera">
+  <textarea id="own-csv" placeholder="date,description,amount,balance&#10;2026-09-01,ZELLE TO LANDLORD RENT,-1200,2310.55&#10;..."></textarea>
+  <div class="row2"><button class="b primary" id="own-run">Check my history</button>
+  <label class="b" for="own-file" style="display:inline-block">Upload CSV</label><input type="file" id="own-file" accept=".csv,text/csv" hidden>
+  <button class="b" id="own-fill">Load an example</button></div>
+  <p class="err" id="own-err" hidden></p></section>
+  ${foot}`;
+  app.querySelectorAll(".person").forEach(b=>b.onclick=()=>run(SAMPLES[b.dataset.k].csv,{name:SAMPLES[b.dataset.k].name,from:SAMPLES[b.dataset.k].from},b.dataset.k));
+  const ta=document.getElementById("own-csv"),er=document.getElementById("own-err");
+  document.getElementById("own-fill").onclick=()=>{ta.value=SAMPLES.marcus.csv;document.getElementById("own-name").value="Marcus Johnson"};
+  document.getElementById("own-file").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>ta.value=rd.result;rd.readAsText(f)};
+  document.getElementById("own-run").onclick=()=>{
+    er.hidden=true;
+    try{const rows=T.parseCSV(ta.value);if(rows.length<20)throw new Error("Add at least 3 months of transactions so recurring payments can be found.");
+      run(ta.value,{name:document.getElementById("own-name").value.trim()||"",from:""},null)}
+    catch(e){er.textContent=e.message;er.hidden=false}
+  };
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?0:ms));
+async function run(csv,applicant,key){
+  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
+  const steps=[["Privacy Guard","code"],["Sorter","ai"],["Checker","code"],["Calculator","code"],["Coach","ai"]];
+  app.innerHTML=`${head}<div class="panel"><div class="eyebrow">Checking ${esc(first)} bank history</div>
+  <ol class="steps">${steps.map(([t,k],i)=>`<li id="st${i}"><span class="dot">${i+1}</span><div><b>${t}</b><span class="tag ${k}">${k==="ai"?"AI":"code"}</span><small>Waiting…</small></div></li>`).join("")}</ol></div>`;
+  const step=(i,msg,done=true)=>{const li=document.getElementById("st"+i);li.className=done?"on":"run";li.querySelector("small").textContent=msg};
+  try{
+    const raw=T.parseCSV(csv);
+    step(0,"Hiding names…",false);await sleep(500);
+    const red=T.redact(raw,applicant);
+    step(0,`Hid ${red.names} name${red.names===1?"":"s"} from ${raw.length} transactions. Applicant name and country never passed on ✔`);
+    step(1,"Sorting with rules…",false);await sleep(350);
+    const s=T.sortRules(red.rows);
+    let ai={map:{},used:false};
+    if(s.unknown.length){step(1,`Rules sorted ${raw.length-s.sorted.filter(r=>!r.cat).length}. Asking Claude about ${s.unknown.length} unfamiliar merchant${s.unknown.length>1?"s":""}…`,false);ai=await aiSort(s.unknown)}
+    const sorted=T.applySort(s.sorted,ai.map);
+    const byAI=sorted.filter(r=>r.by==="ai").length;
+    step(1,`${sorted.filter(r=>r.by==="rules").length} sorted by rules`+(ai.used?`, ${byAI} by AI`:s.unknown.length?`, ${s.unknown.length} merchant${s.unknown.length>1?"s":""} set to everyday spending (AI unavailable)`:""));
+    step(2,"Finding recurring payments…",false);await sleep(450);
+    const m=T.check(sorted);
+    step(2,`Found ${Object.keys(m.wall).length} recurring payments over ${m.months.length} months · ${pct(m.onTime)} on time · ${m.overdrafts90} overdraft fees in 90 days`);
+    step(3,"Scoring…",false);await sleep(400);
+    const sc=T.score(m);
+    step(3,`Reliability Score ${sc.total}. Fixed math: same history always gives the same score`);
+    const plan=T.coach(m);
+    step(4,plan.needed?"Working out the fastest path to approval…":"Writing the summary…",false);
+    const note=await aiCoach(m,sc,plan);
+    step(4,(plan.needed?`Fastest path: ${plan.steps.length} change${plan.steps.length>1?"s":""} → score ${plan.final}`:"No fixes needed")+(note?" · summary written by AI":" · summary from rules (AI unavailable)"));
+    await sleep(500);
+    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,months0:m.months[0]};
+    if(key)location.hash=key;
+    report(false);
+  }catch(e){
+    app.insertAdjacentHTML("beforeend",`<div class="panel"><p class="err">${esc(e.message||"Something went wrong reading that file.")}</p><button class="b" id="bk">Go back</button></div>`);
+    document.getElementById("bk").onclick=home;
+  }
+}
+
+function wall(m){
+  const cols=`grid-template-columns:auto repeat(${m.months.length},minmax(22px,1fr))`;
+  const min=`min-width:${110+m.months.length*24}px`;
+  const word={g:"on time",y:"late",r:"missed",none:"no payment expected"};
+  return `<div class="wallbox"><div class="wall" style="${min}">
+  <div class="r" style="${cols}"><span></span>${m.months.map(x=>`<span class="m">${monHead(x)}</span>`).join("")}</div>
+  ${Object.entries(m.wall).map(([k,v],ri)=>`<div class="r" style="${cols}"><span class="lbl">${esc(k)}</span>${v.map((s,i)=>`<span class="d ${s}" style="animation-delay:${i*35+ri*70}ms" title="${esc(k)} · ${monLabel(m.months[i])}: ${word[s]}"></span>`).join("")}</div>`).join("")}
+  </div></div>
+  <div class="legend"><span style="--c:var(--good)">On time</span><span style="--c:var(--warn)">Late</span><span style="--c:var(--bad)">Missed</span></div>`;
+}
+
+function how(){
+  const {sc,sorted,red}=state;
+  const catName={income:"Income",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt payment",subscription:"Subscription",spending:"Spending",savings:"Savings",fee:"Bank fee"};
+  return `<details><summary>See how we decided</summary>
+  <div style="display:flex;flex-direction:column;gap:10px">
+  ${sc.factors.map(f=>`<div class="factor"><span>${f.name}</span><div class="bar"><i style="width:${f.pts/f.max*100}%"></i></div><span class="v">${f.pts.toFixed(1)}/${f.max}</span></div>`).join("")}
+  <p class="muted" style="margin:4px 0">Weights are fixed in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75+ is Reliable payer, 50–74 is Not yet. The Privacy Guard hid ${red.names} names before anything else ran.</p>
+  <div class="eyebrow">What the Sorter saw (latest 40)</div>
+  <div class="tbl"><table><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Label</th><th>By</th></tr></thead><tbody>
+  ${sorted.slice(-40).reverse().map(r=>`<tr><td>${r.date}</td><td>${esc(r.desc)}</td><td class="amt">${r.amount.toFixed(2)}</td><td>${esc(r.label||catName[r.cat])}</td><td>${r.by==="ai"?'<span class="tag ai">AI</span>':r.by==="rules"?'<span class="tag code">rules</span>':'<span class="tag code">default</span>'}</td></tr>`).join("")}
+  </tbody></table></div></div></details>`;
+}
+
+function report(lender){
+  const {m,sc,plan,note,applicant,key}=state;
+  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
+  const nums=`<div class="nums"><div class="num"><strong>${pct(m.rentOn)}</strong><span>rent on time</span></div>
+    <div class="num"><strong>${pct(m.billsOn)}</strong><span>bills on time</span></div>
+    <div class="num"><strong>${m.months.length}</strong><span>months of history</span></div></div>`;
+  const lead=note?`<p class="ai-note"><small>Summary · AI</small>${esc(note.lender)}</p>`:`<p class="sentence">${esc(ruleSentence(m))}</p>`;
+  const verdict=`<div class="verdict"><span class="badge ${sc.band}">${VERDICT[sc.band]}</span><span class="score"><strong>${sc.total}</strong>/ 100</span></div>`;
+  if(lender){
+    app.innerHTML=`${head}<button class="back" id="bk">← Back to ${esc(first.toLowerCase()==="your"?"your":first)} report</button>
+    <div class="panel lender"><div class="eyebrow">Reliability Report · shared with you</div>${verdict}${wall(m)}${nums}${lead}
+    <div class="banner">🛡️ Fair check passed. Name and background were hidden during review.</div></div>
+    <div class="panel">${how()}</div>${foot}`;
+    document.getElementById("bk").onclick=()=>report(false);
+    if(key)location.hash="lender-"+key;
+    return;
+  }
+  const action=!plan.needed
+    ?`<div class="btns"><button class="b primary" id="share">Share my proof</button></div>`
+    :`<div class="fix ${sc.band==="bad"?"bad":""}"><h3>Your fix</h3><ol>${plan.steps.map(s=>`<li>${esc(s.say)} <b>→ score ${s.after}</b></li>`).join("")}</ol>
+      <p style="margin:0">${plan.final>=75?"Do this and you'll be a <b>Reliable payer</b>.":`That gets you to ${plan.final}. Keep it up for another quarter to reach 75.`}</p>
+      ${note&&note.tip?`<p class="ai-note" style="margin-top:4px"><small>Tip · AI</small>${esc(note.tip)}</p>`:""}</div>`;
+  app.innerHTML=`${head}<button class="back" id="bk">← Start over</button>
+  <div class="panel"><div class="eyebrow">${esc(first)} Reliability Report</div>${verdict}${wall(m)}${nums}${lead}
+  ${note&&note.applicant?`<p class="muted" style="margin:0">${esc(note.applicant)}</p>`:""}${action}</div>
+  <div class="panel"><div class="verdict"><h2>🛡️ Fair check</h2><button class="b" id="prove">Prove it</button></div>
+  <p class="muted" style="margin:0">ThinFile never sees your name or where you're from. Run this exact bank history under 5 other identities and compare.</p><div id="twins"></div></div>
+  <div class="panel">${how()}</div>${foot}`;
+  document.getElementById("bk").onclick=home;
+  const sh=document.getElementById("share");if(sh)sh.onclick=()=>report(true);
+  document.getElementById("prove").onclick=prove;
+}
+
+// Re-runs the whole pipeline with a different identity: the applicant name is swapped
+// and so is any family name inside transfer descriptions.
+function prove(){
+  const {raw,applicant,aiMap,sc}=state;
+  const last=(applicant.name||"").split(" ").slice(-1)[0].toUpperCase();
+  const people=[[applicant.name||"You",applicant.from||"—"],...TWINS];
+  const rows=people.map(([nm,fr],i)=>{
+    const twinLast=nm.split(" ").slice(-1)[0].toUpperCase();
+    const swapped=i===0||!last?raw:raw.map(r=>({...r,desc:r.desc.split(last).join(twinLast)}));
+    const out=pipeline(swapped,{name:nm,from:fr},aiMap);
+    return {nm,fr,score:out.sc.total,band:out.sc.band};
+  });
+  const same=rows.every(r=>r.score===sc.total);
+  document.getElementById("twins").innerHTML=`<div class="twins">${rows.map(r=>`<div class="twin"><span>${esc(r.nm)} · ${esc(r.fr)}</span><span class="s">${r.score}</span><span>${VERDICT[r.band]}</span></div>`).join("")}</div>
+  <div class="banner ${same?"":"warn"}" style="margin-top:10px">${same?"Same history. Same result. Fair by design.":"Scores differ. Something in the data revealed identity."}</div>`;
+}
+
+const h=location.hash.replace("#","");
+const k=h.replace(/^lender-/,"");
+if(SAMPLES[k]){const p=SAMPLES[k];run(p.csv,{name:p.name,from:p.from},k).then(()=>{if(h.startsWith("lender-")&&state.key===k)report(true)})}
+else home();
+</script>

@@ -37,7 +37,8 @@ The result is a **Reliability Report** with the **Reliability Wall**: one green 
 | [docs/ThinFile-Simple.md](docs/ThinFile-Simple.md) | Plain-language overview for any reader |
 | [docs/Positioning-and-Competitive-Landscape.md](docs/Positioning-and-Competitive-Landscape.md) | Competitors, positioning, Nova Credit partnership |
 | [docs/ThinFile-Playbook.md](docs/ThinFile-Playbook.md) | Earlier, more detailed playbook (archived) |
-| [data/](data/) | 90-day sample bank transactions for Priya, Marcus and Jordan |
+| [app/](app/) | The web app. Edit `app/src/`, then run `python3 tools/build.py` to rebuild `app/index.html` |
+| [data/](data/) | 18 months of sample bank transactions for Priya, Marcus and Jordan (`python3 tools/gen_data.py` regenerates them) |
 
 ## Live demo
 

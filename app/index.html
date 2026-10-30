@@ -3,253 +3,540 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: one narrow column, app-like; report = verdict, wall, numbers, action */
+/* Layout: one narrow app column; report reads verdict -> wall -> numbers -> action */
 :root{
   --bg:#f6f8f7; --card:#ffffff; --fg:#0f1f3a; --muted:#5b6b80; --line:#dde5e2;
-  --good:#0f9d6b; --goodsoft:#d7f3e7; --warn:#d99a1e; --warnsoft:#fbefd4; --bad:#d4483b; --badsoft:#fadcd8;
-  --accent:#0f1f3a; --empty:#e8edeb;
+  --good:#0f9d6b; --goodsoft:#d7f3e7; --warn:#c98a12; --warnsoft:#fbefd4; --bad:#d4483b; --badsoft:#fadcd8;
+  --empty:#e8edeb; --ai:#5b5bd6; --aisoft:#e7e7fb;
   --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
   --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
-  --accent:#e8eef7; --empty:#1d2a40; color-scheme:dark}}
+  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1322; --card:#121c2f; --fg:#e8eef7; --muted:#93a3b8; --line:#22304a;
   --good:#2fc58b; --goodsoft:#123b2e; --warn:#f0b443; --warnsoft:#3a2f14; --bad:#f06b5d; --badsoft:#3d1c1a;
-  --accent:#e8eef7; --empty:#1d2a40; color-scheme:dark}
+  --empty:#1d2a40; --ai:#9d9dff; --aisoft:#23264a; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
-.wrap{max-width:760px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+.wrap{max-width:780px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
 h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
 h1{font-size:clamp(2.1rem,7vw,3.3rem);line-height:1.02;font-weight:800}
-h2{font-size:1.6rem;font-weight:800}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;gap:8px;align-items:center}
-.logo i{width:14px;height:14px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:18px 0 0 var(--good),36px 0 0 var(--warn);margin-right:38px}
+h2{font-size:1.45rem;font-weight:800}
+h3{font-size:1.1rem}
+.logo{font-family:var(--display);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:10px}
+.logo i{display:flex;gap:4px}.logo i b{width:12px;height:12px;border-radius:50%;background:var(--good)}.logo i b:last-child{background:var(--warn)}
 .lead{color:var(--muted);font-size:1.1rem;max-width:34em;margin:10px 0 0}
-.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.eyebrow{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .person{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s}
-.person:hover,.person:focus-visible{transform:translateY(-2px);border-color:var(--good)}
+.person:hover{transform:translateY(-2px);border-color:var(--good)}
 .person:focus-visible{outline:3px solid var(--good);outline-offset:2px}
 .person b{font-family:var(--display);font-size:1.25rem}
 .person span{color:var(--muted);font-size:.95rem}
-.mini{display:flex;gap:3px;margin-top:6px}.mini u{width:9px;height:9px;border-radius:50%;text-decoration:none}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.steps li{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;opacity:.35;transition:opacity .3s}
-.steps li.on{opacity:1}
-.steps .dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.mini{display:flex;gap:3px;margin-top:6px}.mini u{width:9px;height:9px;border-radius:50%}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+textarea,input[type=text]{font:inherit;font-size:.9rem;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg)}
+textarea{font-family:var(--mono);font-size:.8rem;min-height:150px;resize:vertical}
+textarea:focus,input:focus{outline:2px solid var(--good);outline-offset:1px}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.err{color:var(--bad);font-weight:700;margin:0}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.steps li{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;opacity:.35;transition:opacity .3s}
+.steps li.on,.steps li.run{opacity:1}
+.steps .dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.steps li.run .dot{border-color:var(--good);animation:pulse 1s infinite}
 .steps li.on .dot{background:var(--good);border-color:var(--good);color:#fff}
-.steps b{display:block}.steps small{color:var(--muted);font-size:.92rem}
+@keyframes pulse{50%{box-shadow:0 0 0 6px var(--goodsoft)}}
+.steps b{display:inline}.steps small{display:block;color:var(--muted);font-size:.92rem}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
+.tag.ai{background:var(--aisoft);color:var(--ai)}.tag.code{background:var(--empty);color:var(--muted)}
 .verdict{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
-.badge{font-family:var(--display);font-weight:800;font-size:1.5rem;padding:8px 16px;border-radius:999px}
+.badge{font-family:var(--display);font-weight:800;font-size:1.45rem;padding:8px 16px;border-radius:999px}
 .badge.good{background:var(--goodsoft);color:var(--good)}.badge.warn{background:var(--warnsoft);color:var(--warn)}.badge.bad{background:var(--badsoft);color:var(--bad)}
 .score{font-family:var(--mono);color:var(--muted);font-size:.95rem}
 .score strong{font-family:var(--display);color:var(--fg);font-size:2.2rem;margin-right:4px}
-.wallbox{overflow-x:auto}
-.wall{display:grid;gap:6px 0;min-width:560px}
-.wall .row{display:grid;grid-template-columns:96px repeat(18,1fr);align-items:center}
-.wall .lbl{font-size:.85rem;color:var(--muted);font-weight:500}
-.wall .m{font-family:var(--mono);font-size:.62rem;color:var(--muted);text-align:center}
+.wallbox{overflow-x:auto;padding-bottom:4px}
+.wall{display:grid;gap:7px 0}
+.wall .r{display:grid;align-items:center}
+.wall .lbl{font-size:.85rem;color:var(--muted);font-weight:500;white-space:nowrap;padding-right:10px}
+.wall .m{font-family:var(--mono);font-size:.6rem;line-height:1.25;color:var(--muted);text-align:center;white-space:nowrap}
 .wall .d{width:18px;height:18px;border-radius:50%;margin:auto;background:var(--empty);transform:scale(.2);opacity:0;animation:pop .35s forwards}
-.d.g{background:var(--good)}.d.y{background:var(--warn)}.d.r{background:var(--bad)}
+.d.g{background:var(--good)}.d.y{background:var(--warn)}.d.r{background:var(--bad)}.d.none{background:transparent;border:1px dashed var(--line)}
 @keyframes pop{to{transform:scale(1);opacity:1}}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
-.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.num{border-top:2px solid var(--line);padding-top:8px}
-.num strong{font-family:var(--display);font-size:clamp(1.6rem,6vw,2.3rem);display:block;font-variant-numeric:tabular-nums}
-.num span{color:var(--muted);font-size:.88rem}
-.sentence{font-size:1.15rem;font-weight:500;margin:0}
-.fix{background:var(--warnsoft);border-radius:14px;padding:16px}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.num{border-top:2px solid var(--line);padding-top:8px;min-width:0}
+.num strong{font-family:var(--display);font-size:clamp(1.5rem,6vw,2.2rem);display:block;font-variant-numeric:tabular-nums}
+.num span{color:var(--muted);font-size:.86rem}
+.sentence{font-size:1.12rem;font-weight:500;margin:0}
+.ai-note{border-left:3px solid var(--ai);padding:4px 0 4px 12px;color:var(--fg);margin:0}
+.ai-note small{display:block;color:var(--ai);font-weight:700;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.fix{background:var(--warnsoft);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
 .fix.bad{background:var(--badsoft)}
-.fix h3{font-size:1.1rem;margin-bottom:6px}
-.fix ul{margin:0;padding-left:20px}
+.fix ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
 .btns{display:flex;flex-wrap:wrap;gap:10px}
-button.b{font:inherit;font-weight:700;border-radius:12px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.b{font:inherit;font-weight:700;border-radius:12px;padding:11px 18px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
 button.b.primary{background:var(--good);border-color:var(--good);color:#fff}
+button.b:disabled{opacity:.5;cursor:default}
 button.b:focus-visible{outline:3px solid var(--good);outline-offset:2px}
 .twins{display:flex;flex-direction:column;gap:6px}
-.twin{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 12px;border-radius:10px;background:var(--bg);font-variant-numeric:tabular-nums;align-items:center}
-.twin .s{font-family:var(--mono)}
+.twin{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:9px 12px;border-radius:10px;background:var(--bg);align-items:center;font-variant-numeric:tabular-nums}
+.twin .s{font-family:var(--mono);font-weight:700}
 .banner{background:var(--goodsoft);color:var(--good);font-weight:700;padding:12px 14px;border-radius:12px}
-details summary{cursor:pointer;font-weight:700}
-details p{margin:8px 0;color:var(--muted);font-size:.95rem}
-.factor{display:grid;grid-template-columns:150px 1fr 60px;gap:10px;align-items:center;font-size:.92rem}
+.banner.warn{background:var(--warnsoft);color:var(--warn)}
+details summary{cursor:pointer;font-weight:700;font-family:var(--display);font-size:1.1rem}
+details[open] summary{margin-bottom:12px}
+.factor{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;align-items:center;font-size:.92rem}
 .bar{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}.bar i{display:block;height:100%;background:var(--good)}
 .factor .v{font-family:var(--mono);text-align:right}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;max-height:280px}
+table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--card);color:var(--muted);font-weight:700}
+td.amt{text-align:right;font-family:var(--mono)}
+.muted{color:var(--muted)}
 .lender{border:2px solid var(--fg)}
-.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.foot{color:var(--muted);font-size:.82rem;text-align:center}
+.foot{color:var(--muted);font-size:.82rem;text-align:center;margin:0}
 .back{all:unset;cursor:pointer;color:var(--muted);font-weight:700}
-@media (max-width:480px){.factor{grid-template-columns:110px 1fr 48px}}
-@media (prefers-reduced-motion:reduce){.wall .d{animation:none;transform:none;opacity:1}.steps li{transition:none}}
+.back:focus-visible{outline:2px solid var(--good)}
+@media (max-width:480px){.factor{grid-template-columns:110px 1fr 54px}.panel{padding:18px}}
+@media (prefers-reduced-motion:reduce){.wall .d{animation:none;transform:none;opacity:1}.steps li.run .dot{animation:none}}
 </style>
 
 <div class="wrap" id="app"></div>
 
 <script>
-const MONTHS=["May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"];
-const g18=()=>Array(18).fill("g");
-const set=(a,idx,v)=>{const b=a.slice();idx.forEach(i=>b[i]=v);return b};
+// ThinFile engine: parse -> redact -> sort -> check -> score -> coach.
+// Pure functions, no DOM, so the same code runs in the page and in tests.
+const ThinFile = (() => {
+  // ---------- 1. Parse ----------
+  function parseCSV(text) {
+    const lines = String(text).replace(/\r/g, "").split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) throw new Error("Add a header row and at least one transaction.");
+    const split = l => {
+      const out = []; let cur = "", q = false;
+      for (const ch of l) {
+        if (ch === '"') q = !q;
+        else if (ch === "," && !q) { out.push(cur); cur = ""; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    };
+    const head = split(lines[0]).map(h => h.toLowerCase());
+    const col = names => head.findIndex(h => names.includes(h));
+    const di = col(["date", "posted", "transaction date"]);
+    const si = col(["description", "desc", "memo", "name", "details"]);
+    const ai = col(["amount", "amt"]);
+    const bi = col(["balance", "running balance"]);
+    if (di < 0 || si < 0 || ai < 0) throw new Error("The first row must name the columns: date, description, amount (balance is optional).");
+    const rows = [];
+    lines.slice(1).forEach((l, n) => {
+      const c = split(l);
+      const date = normDate(c[di]);
+      const amount = Number(String(c[ai]).replace(/[$,\s]/g, ""));
+      if (!date || !isFinite(amount)) throw new Error(`Row ${n + 2} has an unreadable date or amount: "${l.slice(0, 60)}"`);
+      rows.push({ date, desc: String(c[si] || "").toUpperCase(), amount, balance: bi >= 0 ? Number(c[bi]) : null });
+    });
+    rows.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    return rows;
+  }
+  function normDate(s) {
+    s = String(s || "").trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (m) { const y = m[3].length === 2 ? "20" + m[3] : m[3]; return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`; }
+    return null;
+  }
 
-// Sample applicants. Personal fields are removed by the Privacy Guard before scoring.
-const PEOPLE={
-  priya:{name:"Priya Patel",from:"India",tag:"18 months in the US, never missed rent",
-    bills:{Rent:g18(),Phone:g18(),Electric:g18(),Internet:g18()},
-    income:Array(18).fill(2400), spend:[1712,1690,1745,1760,1702,1688,1730,1695,1741,1710,1722,1689,1735,1701,1718,1744,1693,1720],
-    overdrafts90:0, rent:1100},
-  marcus:{name:"Marcus Johnson",from:"USA",tag:"Delivery driver, uneven pay",
-    bills:{Rent:g18(),Phone:set(g18(),[6],"y"),"Car insurance":set(g18(),[11],"y"),Electric:g18()},
-    income:[2650,3100,1800,2400,3900,2900,2200,1850,3300,2750,2500,3600,2100,3050,1800,1800,3900,2700],
-    spend:[2400,2700,1950,2250,3300,2600,2150,1990,2900,2500,2350,3150,2050,2700,1990,1950,3300,2600],
-    overdrafts90:3, rent:950},
-  jordan:{name:"Jordan Lee",from:"USA",tag:"Big salary, bigger spending",
-    bills:{Rent:set(g18(),[13,15,17],"y"),"Car lease":set(g18(),[14,16],"y"),Phone:set(g18(),[15,17],"r"),"Credit card":set(g18(),[12,13,14,16],"y"),"Pay later":set(g18(),[12,14,15,16,17],"r")},
-    income:Array(18).fill(5500), spend:[5780,5900,6020,5850,6100,6000,5950,6080,6150,6020,5990,6110,6200,6080,6150,6300,6250,6180],
-    overdrafts90:7, rent:2450}
-};
-const TWINS=[["Priya Patel","India"],["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"]];
+  // ---------- 2. Privacy Guard ----------
+  // Removes people's names from person-to-person transfers. The applicant's own
+  // name and background are never passed to any later step.
+  const P2P = /^(ZELLE (?:TO|FROM)|VENMO (?:TO|FROM)|WISE TRANSFER (?:TO|FROM)|CASH APP (?:TO|FROM)|PAYPAL (?:TO|FROM))\s+(.+?)(\s+RENT)?$/;
+  function redact(rows, applicant) {
+    let names = 0;
+    const words = applicant ? String(applicant.name || "").toUpperCase().split(/\s+/).filter(w => w.length > 1) : [];
+    const out = rows.map(r => {
+      let desc = r.desc;
+      const m = desc.match(P2P);
+      if (m) { desc = `${m[1]} •••${m[3] || ""}`; names++; }
+      for (const w of words) if (desc.includes(w)) { desc = desc.split(w).join("•••"); names++; }
+      return { date: r.date, desc, amount: r.amount, balance: r.balance };
+    });
+    return { rows: out, names };
+  }
 
-const clamp=x=>Math.max(0,Math.min(1,x));
-const r1=x=>Math.round(x*10)/10;
+  // ---------- 3. Sorter ----------
+  const RULES = [
+    ["fee", null, /\bNSF\b|OVERDRAFT|RETURNED ITEM|INSUFFICIENT/],
+    ["savings", null, /TRANSFER TO SAVINGS|TO SAVINGS|SAVINGS DEPOSIT/],
+    ["income", null, /PAYROLL|DIRECT DEP|STIPEND|SALARY|DASHER PAYOUT|DRIVER .*PAYOUT|INSTACART SHOPPER|GRUBHUB DRIVER/],
+    ["transfer_in", null, /^(ZELLE|VENMO|WISE TRANSFER|CASH APP|PAYPAL) FROM/],
+    ["rent", "Rent", /\bRENT\b/],
+    ["bill", "Electric", /PSEG|CON ?ED|ELECTRIC|UTILITY|NATIONAL GRID|DUKE ENERGY/],
+    ["bill", "Phone", /MOBILE|WIRELESS|VERIZON|AT&T|SPRINT/],
+    ["bill", "Internet", /INTERNET|OPTIMUM|XFINITY|COMCAST|FIOS|SPECTRUM/],
+    ["bill", "Car insurance", /AUTO INS|PROGRESSIVE|GEICO|STATE FARM|ALLSTATE/],
+    ["debt", "Car payment", /CAR PMT|AUTO LOAN|TOYOTA FINANCIAL|HONDA FINANCIAL/],
+    ["debt", "Car lease", /LEASE/],
+    ["debt", "Credit card", /CARD MIN PMT|CREDIT CARD|CARD PAYMENT|AMEX PMT|DISCOVER PMT/],
+    ["debt", "Pay later", /AFFIRM|KLARNA|AFTERPAY|PAY LATER/],
+    ["debt", "Student loan", /STUDENT LOAN|NAVIENT|NELNET|SALLIE MAE/],
+    ["subscription", null, /SPOTIFY|NETFLIX|HULU|APPLE\.COM|EQUINOX|PLANET FITNESS|YOUTUBE/],
+    ["spending", null, /TRADER JOE|SHOPRITE|WHOLE FOODS|TARGET|AMAZON|WALMART|UBER EATS|DOORDASH(?! DASHER)|GRUBHUB(?! DRIVER)|CHIPOTLE|SHELL|EXXON|BP |NJ TRANSIT|MTA|NOBU|SEPHORA|AIRBNB|TICKETMASTER|LOUNGE|VENMO PAYMENT|UBER TRIP|LYFT|STARBUCKS|POPEYES|MCDONALD|PATEL BROTHERS|GROCERY|CVS|WALGREENS/],
+  ];
+  const CATS = ["income", "transfer_in", "rent", "bill", "debt", "subscription", "spending", "savings", "fee"];
+  function merchantKey(desc) {
+    return desc.replace(/[#*]/g, " ").replace(/\d+/g, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 3).join(" ");
+  }
+  function sortRules(rows) {
+    const unknown = new Map();
+    const sorted = rows.map(r => {
+      for (const [cat, label, re] of RULES) if (re.test(r.desc)) return { ...r, cat, label, by: "rules" };
+      const key = merchantKey(r.desc);
+      unknown.set(key, r.amount);
+      return { ...r, cat: null, label: null, key, by: null };
+    });
+    return { sorted, unknown: [...unknown.entries()].map(([key, amount]) => ({ key, amount })) };
+  }
+  // aiMap: { [merchantKey]: {cat, label} } from the AI Sorter; anything missing becomes spending.
+  function applySort(sorted, aiMap) {
+    return sorted.map(r => {
+      if (r.cat) return r;
+      const hit = aiMap && aiMap[r.key];
+      if (hit && CATS.includes(hit.cat)) {
+        const label = ["bill", "debt", "rent"].includes(hit.cat) ? (hit.label || r.key) : null;
+        return { ...r, cat: hit.cat, label, by: "ai" };
+      }
+      return { ...r, cat: r.amount > 0 ? "transfer_in" : "spending", label: null, by: "default" };
+    });
+  }
 
-// Privacy Guard: only financial behavior passes through.
-function redact(p){return {bills:p.bills,income:p.income,spend:p.spend,overdrafts90:p.overdrafts90,rent:p.rent}}
+  // ---------- 4. Checker ----------
+  const ym = d => d.slice(0, 7);
+  function monthRange(a, b) {
+    const out = []; let [y, m] = a.split("-").map(Number); const [by, bm] = b.split("-").map(Number);
+    while (y < by || (y === by && m <= bm)) { out.push(`${y}-${String(m).padStart(2, "0")}`); m++; if (m > 12) { m = 1; y++; } }
+    return out;
+  }
+  function check(rows) {
+    const first = rows[0].date, last = rows[rows.length - 1].date;
+    const months = monthRange(ym(first), ym(last));
+    // Recurring payments: rent, bills and debts seen in 3+ different months.
+    const groups = {};
+    for (const r of rows) if (["rent", "bill", "debt"].includes(r.cat) && r.amount < 0) (groups[r.label] ||= []).push(r);
+    const wall = {};
+    for (const [label, list] of Object.entries(groups)) {
+      const byMonth = {};
+      for (const r of list) (byMonth[ym(r.date)] ||= []).push(Number(r.date.slice(8)));
+      if (Object.keys(byMonth).length < 3) continue;
+      const days = Object.values(byMonth).map(d => Math.min(...d));
+      const freq = {}; days.forEach(d => freq[d] = (freq[d] || 0) + 1);
+      const due = Number(Object.entries(freq).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]);
+      const start = ym(list[0].date);
+      wall[label] = months.map((mo, i) => {
+        if (mo < start) return "none";
+        if (byMonth[mo]) return Math.min(...byMonth[mo]) - due <= 3 ? "g" : "y";
+        // The last month may be incomplete: only call it missed once the due day has passed.
+        if (i === months.length - 1 && Number(last.slice(8)) < due + 4) return "none";
+        return "r";
+      });
+    }
+    // Monthly income and spending (savings transfers are not spending).
+    const inc = {}, out = {};
+    months.forEach(m => { inc[m] = 0; out[m] = 0; });
+    for (const r of rows) {
+      if (r.cat === "income") inc[ym(r.date)] += r.amount;
+      else if (r.amount < 0 && r.cat !== "savings") out[ym(r.date)] -= r.amount;
+    }
+    const cutoff = new Date(new Date(last).getTime() - 90 * 864e5).toISOString().slice(0, 10);
+    const overdrafts90 = rows.filter(r => r.cat === "fee" && r.date > cutoff).length;
+    const cells = Object.values(wall).flat().filter(s => s !== "none");
+    const rate = arr => arr.length ? arr.filter(s => s === "g").length / arr.length : null;
+    const billCells = Object.entries(wall).filter(([k]) => k !== "Rent").flatMap(([, v]) => v).filter(s => s !== "none");
+    const income = months.map(m => inc[m]);
+    const spend = months.map(m => out[m]);
+    const paidMonths = months.filter(m => inc[m] > 0);
+    const mean = paidMonths.length ? paidMonths.reduce((a, m) => a + inc[m], 0) / paidMonths.length : 0;
+    const sd = paidMonths.length ? Math.sqrt(paidMonths.reduce((a, m) => a + (inc[m] - mean) ** 2, 0) / paidMonths.length) : 0;
+    const left = paidMonths.length ? paidMonths.reduce((a, m) => a + (inc[m] - out[m]) / inc[m], 0) / paidMonths.length : -1;
+    const rentRow = wall.Rent ? wall.Rent.filter(s => s !== "none") : [];
+    return {
+      months, wall, income, spend, overdrafts90,
+      onTime: rate(cells) ?? 0, rentOn: rate(rentRow), billsOn: rate(billCells),
+      late: cells.filter(s => s === "y").length, missed: cells.filter(s => s === "r").length,
+      payments: cells.length, mean, cv: mean ? sd / mean : 1, left,
+      rentStreak: (() => { let n = 0; for (let i = rentRow.length - 1; i >= 0 && rentRow[i] === "g"; i--) n++; return n; })(),
+      rentAmount: groups.Rent ? Math.round(-groups.Rent[groups.Rent.length - 1].amount) : null,
+      first, last,
+    };
+  }
 
-// Calculator: fixed weights, plain math, no AI. Same data in, same score out.
-function measure(d){
-  const all=Object.values(d.bills).flat();
-  const onTime=all.filter(s=>s==="g").length/all.length;
-  const rentRow=d.bills.Rent, rentOn=rentRow.filter(s=>s==="g").length/rentRow.length;
-  const billRows=Object.entries(d.bills).filter(([k])=>k!=="Rent").flatMap(([,v])=>v);
-  const billsOn=billRows.filter(s=>s==="g").length/billRows.length;
-  const mean=d.income.reduce((a,b)=>a+b,0)/d.income.length;
-  const sd=Math.sqrt(d.income.reduce((a,b)=>a+(b-mean)**2,0)/d.income.length);
-  const cv=sd/mean;
-  const left=d.income.reduce((a,inc,i)=>a+(inc-d.spend[i])/inc,0)/d.income.length;
-  return {onTime,rentOn,billsOn,cv,left,mean,od:d.overdrafts90,months:rentRow.length};
-}
-function score(m){
-  const f={
-    "On-time payments":{pts:40*clamp((m.onTime-0.6)/0.4),max:40},
-    "Steady income":{pts:25*clamp(1-(m.cv-0.1)/0.5),max:25},
-    "Money left over":{pts:20*clamp((m.left+0.1)/0.45),max:20},
-    "No overdrafts":{pts:15*clamp(1-m.od/3),max:15}
-  };
-  const total=Math.round(Object.values(f).reduce((a,x)=>a+x.pts,0));
-  return {f,total};
-}
-function verdict(t){return t>=75?{txt:"Reliable payer ✅",cls:"good"}:t>=50?{txt:"Not yet 🟡",cls:"warn"}:{txt:"Not ready ❌",cls:"bad"}}
+  // ---------- 5. Calculator ----------
+  // Fixed weights in plain code. Same history in, same score out.
+  const clamp = x => Math.max(0, Math.min(1, x));
+  function score(m) {
+    const factors = [
+      { key: "onTime", name: "On-time payments", max: 40, pts: 40 * clamp((m.onTime - 0.6) / 0.4) },
+      { key: "income", name: "Steady income", max: 25, pts: 25 * clamp(1 - (m.cv - 0.1) / 0.5) },
+      { key: "left", name: "Money left over", max: 20, pts: 20 * clamp((m.left + 0.1) / 0.45) },
+      { key: "od", name: "No overdrafts", max: 15, pts: 15 * clamp(1 - m.overdrafts90 / 3) },
+    ];
+    const total = Math.round(factors.reduce((a, f) => a + f.pts, 0));
+    return { factors, total, band: total >= 75 ? "good" : total >= 50 ? "warn" : "bad" };
+  }
 
-// Coach: smallest set of changes that reaches 75.
-function coach(m,s){
-  if(s.total>=75)return null;
-  const opts=[
-    {k:"od",say:"Avoid overdrafts for the next 60 days",apply:x=>({...x,od:0})},
-    {k:"left",say:"Spend less than you earn for the next 3 months (keep about 15% left over)",apply:x=>({...x,left:Math.max(x.left,0.15)})},
-    {k:"on",say:"Pay every bill on or before its due date for the next 3 months",apply:x=>({...x,onTime:Math.max(x.onTime,0.97)})}
-  ].map(o=>({...o,gain:score(o.apply(m)).total-s.total})).filter(o=>o.gain>0).sort((a,b)=>b.gain-a.gain);
-  let cur=m,steps=[];
-  for(const o of opts){cur=o.apply(cur);const t=score(cur).total;steps.push({...o,after:t});if(t>=75)break}
-  return {steps,final:score(cur).total};
-}
+  // ---------- 6. Coach ----------
+  // Searches for the smallest set of realistic changes that reaches 75.
+  function coach(m) {
+    const now = score(m);
+    if (now.total >= 75) return { needed: false, steps: [], final: now.total };
+    const moves = [
+      { key: "od", say: "Avoid overdrafts for the next 60 days", apply: x => ({ ...x, overdrafts90: 0 }) },
+      { key: "left", say: "Spend less than you earn for the next 3 months, keeping about 15% left over", apply: x => ({ ...x, left: Math.max(x.left, 0.15) }) },
+      { key: "onTime", say: "Pay every bill on or before its due date for the next 3 months", apply: x => ({ ...x, onTime: Math.max(x.onTime, 0.97) }) },
+    ];
+    let cur = m; const steps = []; const used = new Set();
+    while (score(cur).total < 75 && used.size < moves.length) {
+      const best = moves.filter(mv => !used.has(mv.key))
+        .map(mv => ({ mv, gain: score(mv.apply(cur)).total - score(cur).total }))
+        .sort((a, b) => b.gain - a.gain)[0];
+      if (!best || best.gain <= 0) break;
+      used.add(best.mv.key); cur = best.mv.apply(cur);
+      steps.push({ key: best.mv.key, say: best.mv.say, gain: best.gain, after: score(cur).total });
+    }
+    return { needed: true, steps, final: score(cur).total };
+  }
 
-const money=n=>"$"+n.toLocaleString("en-US");
-function sentence(key,m){
-  const p=PEOPLE[key];
-  if(key==="priya")return `Paid ${money(p.rent)} rent on the 1st for ${m.months} straight months. Never overdrawn.`;
-  if(key==="marcus")return `Rent paid on time for ${m.months} straight months, even when pay dipped. ${m.od} overdraft fees in the last 90 days.`;
-  return `Strong income of ${money(Math.round(m.mean))} a month, but spending has been higher than earnings for ${m.months} months.`;
-}
+  return { parseCSV, redact, sortRules, applySort, check, score, coach, merchantKey, CATS };
+})();
 
+
+const SAMPLES={"priya": {"name": "Priya Patel", "from": "India", "tag": "18 months in the US, never missed rent", "dots": ["good", "good", "good", "good", "good", "good", "good", "good"], "csv": "date,description,amount,balance\n2025-05-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,4240.00\n2025-05-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,3140.00\n2025-05-03,NJ TRANSIT MONTHLY PASS,-64.00,3076.00\n2025-05-05,PSEG UTILITY AUTOPAY,-52.03,3023.97\n2025-05-06,MINT MOBILE,-30.00,2993.97\n2025-05-08,SPOTIFY STUDENT,-5.99,2987.98\n2025-05-09,PATEL BROTHERS GROCERY,-88.20,2899.78\n2025-05-10,OPTIMUM INTERNET,-50.00,2849.78\n2025-05-12,ACH DEBIT LEMONADE INC,-12.00,2837.78\n2025-05-13,CHIPOTLE JERSEY CITY,-14.26,2823.52\n2025-05-16,PATEL BROTHERS GROCERY,-84.54,2738.98\n2025-05-18,TARGET HOBOKEN,-24.69,2714.29\n2025-05-20,TRANSFER TO SAVINGS,-250.00,2464.29\n2025-05-24,PATEL BROTHERS GROCERY,-62.26,2402.03\n2025-06-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,4802.03\n2025-06-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,3702.03\n2025-06-03,NJ TRANSIT MONTHLY PASS,-64.00,3638.03\n2025-06-05,PSEG UTILITY AUTOPAY,-48.85,3589.18\n2025-06-06,MINT MOBILE,-30.00,3559.18\n2025-06-08,SPOTIFY STUDENT,-5.99,3553.19\n2025-06-09,TRADER JOES #612,-85.08,3468.11\n2025-06-10,OPTIMUM INTERNET,-50.00,3418.11\n2025-06-12,ACH DEBIT LEMONADE INC,-12.00,3406.11\n2025-06-13,CHIPOTLE JERSEY CITY,-12.33,3393.78\n2025-06-16,SQ *HUDSON GREENS,-67.96,3325.82\n2025-06-18,TARGET HOBOKEN,-49.56,3276.26\n2025-06-20,TRANSFER TO SAVINGS,-250.00,3026.26\n2025-06-24,PATEL BROTHERS GROCERY,-81.96,2944.30\n2025-07-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,5344.30\n2025-07-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,4244.30\n2025-07-03,NJ TRANSIT MONTHLY PASS,-64.00,4180.30\n2025-07-05,PSEG UTILITY AUTOPAY,-51.07,4129.23\n2025-07-06,MINT MOBILE,-30.00,4099.23\n2025-07-08,SPOTIFY STUDENT,-5.99,4093.24\n2025-07-09,TRADER JOES #612,-77.69,4015.55\n2025-07-10,OPTIMUM INTERNET,-50.00,3965.55\n2025-07-12,ACH DEBIT LEMONADE INC,-12.00,3953.55\n2025-07-13,CHIPOTLE JERSEY CITY,-12.08,3941.47\n2025-07-14,WISE TRANSFER FROM S PATEL,300.00,4241.47\n2025-07-16,PATEL BROTHERS GROCERY,-62.24,4179.23\n2025-07-18,AMAZON MKTPL,-56.29,4122.94\n2025-07-20,TRANSFER TO SAVINGS,-250.00,3872.94\n2025-07-24,SQ *HUDSON GREENS,-95.07,3777.87\n2025-08-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,6177.87\n2025-08-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,5077.87\n2025-08-03,NJ TRANSIT MONTHLY PASS,-64.00,5013.87\n2025-08-05,PSEG UTILITY AUTOPAY,-63.83,4950.04\n2025-08-06,MINT MOBILE,-30.00,4920.04\n2025-08-08,SPOTIFY STUDENT,-5.99,4914.05\n2025-08-09,PATEL BROTHERS GROCERY,-78.81,4835.24\n2025-08-10,OPTIMUM INTERNET,-50.00,4785.24\n2025-08-12,ACH DEBIT LEMONADE INC,-12.00,4773.24\n2025-08-13,CHIPOTLE JERSEY CITY,-12.09,4761.15\n2025-08-16,TRADER JOES #612,-85.98,4675.17\n2025-08-18,AMAZON MKTPL,-67.61,4607.56\n2025-08-20,TRANSFER TO SAVINGS,-250.00,4357.56\n2025-08-24,SQ *HUDSON GREENS,-70.21,4287.35\n2025-09-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,6687.35\n2025-09-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,5587.35\n2025-09-03,NJ TRANSIT MONTHLY PASS,-64.00,5523.35\n2025-09-05,PSEG UTILITY AUTOPAY,-75.80,5447.55\n2025-09-06,MINT MOBILE,-30.00,5417.55\n2025-09-08,SPOTIFY STUDENT,-5.99,5411.56\n2025-09-09,TRADER JOES #612,-64.64,5346.92\n2025-09-10,OPTIMUM INTERNET,-50.00,5296.92\n2025-09-12,ACH DEBIT LEMONADE INC,-12.00,5284.92\n2025-09-13,CHIPOTLE JERSEY CITY,-15.96,5268.96\n2025-09-16,TRADER JOES #612,-85.06,5183.90\n2025-09-18,AMAZON MKTPL,-26.04,5157.86\n2025-09-20,TRANSFER TO SAVINGS,-250.00,4907.86\n2025-09-24,SQ *HUDSON GREENS,-85.30,4822.56\n2025-10-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,7222.56\n2025-10-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,6122.56\n2025-10-03,NJ TRANSIT MONTHLY PASS,-64.00,6058.56\n2025-10-05,PSEG UTILITY AUTOPAY,-57.98,6000.58\n2025-10-06,MINT MOBILE,-30.00,5970.58\n2025-10-08,SPOTIFY STUDENT,-5.99,5964.59\n2025-10-09,PATEL BROTHERS GROCERY,-75.60,5888.99\n2025-10-10,OPTIMUM INTERNET,-50.00,5838.99\n2025-10-12,ACH DEBIT LEMONADE INC,-12.00,5826.99\n2025-10-13,CHIPOTLE JERSEY CITY,-11.95,5815.04\n2025-10-16,SQ *HUDSON GREENS,-75.19,5739.85\n2025-10-18,AMAZON MKTPL,-49.38,5690.47\n2025-10-20,TRANSFER TO SAVINGS,-250.00,5440.47\n2025-10-24,SQ *HUDSON GREENS,-84.21,5356.26\n2025-11-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,7756.26\n2025-11-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,6656.26\n2025-11-03,NJ TRANSIT MONTHLY PASS,-64.00,6592.26\n2025-11-05,PSEG UTILITY AUTOPAY,-74.47,6517.79\n2025-11-06,MINT MOBILE,-30.00,6487.79\n2025-11-08,SPOTIFY STUDENT,-5.99,6481.80\n2025-11-09,TRADER JOES #612,-86.95,6394.85\n2025-11-10,OPTIMUM INTERNET,-50.00,6344.85\n2025-11-12,ACH DEBIT LEMONADE INC,-12.00,6332.85\n2025-11-13,CHIPOTLE JERSEY CITY,-14.72,6318.13\n2025-11-14,WISE TRANSFER FROM S PATEL,300.00,6618.13\n2025-11-16,PATEL BROTHERS GROCERY,-72.22,6545.91\n2025-11-18,AMAZON MKTPL,-40.72,6505.19\n2025-11-20,TRANSFER TO SAVINGS,-250.00,6255.19\n2025-11-24,TRADER JOES #612,-75.84,6179.35\n2025-12-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,8579.35\n2025-12-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,7479.35\n2025-12-03,NJ TRANSIT MONTHLY PASS,-64.00,7415.35\n2025-12-05,PSEG UTILITY AUTOPAY,-53.19,7362.16\n2025-12-06,MINT MOBILE,-30.00,7332.16\n2025-12-08,SPOTIFY STUDENT,-5.99,7326.17\n2025-12-09,PATEL BROTHERS GROCERY,-74.29,7251.88\n2025-12-10,OPTIMUM INTERNET,-50.00,7201.88\n2025-12-12,ACH DEBIT LEMONADE INC,-12.00,7189.88\n2025-12-13,CHIPOTLE JERSEY CITY,-14.32,7175.56\n2025-12-16,TRADER JOES #612,-80.97,7094.59\n2025-12-18,TARGET HOBOKEN,-58.92,7035.67\n2025-12-20,TRANSFER TO SAVINGS,-250.00,6785.67\n2025-12-24,PATEL BROTHERS GROCERY,-79.74,6705.93\n2026-01-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,9105.93\n2026-01-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,8005.93\n2026-01-03,NJ TRANSIT MONTHLY PASS,-64.00,7941.93\n2026-01-05,PSEG UTILITY AUTOPAY,-63.63,7878.30\n2026-01-06,MINT MOBILE,-30.00,7848.30\n2026-01-08,SPOTIFY STUDENT,-5.99,7842.31\n2026-01-09,TRADER JOES #612,-83.08,7759.23\n2026-01-10,OPTIMUM INTERNET,-50.00,7709.23\n2026-01-12,ACH DEBIT LEMONADE INC,-12.00,7697.23\n2026-01-13,CHIPOTLE JERSEY CITY,-15.24,7681.99\n2026-01-16,PATEL BROTHERS GROCERY,-88.21,7593.78\n2026-01-18,POS 4471 KWIK MART,-49.66,7544.12\n2026-01-20,TRANSFER TO SAVINGS,-250.00,7294.12\n2026-01-24,SQ *HUDSON GREENS,-63.71,7230.41\n2026-02-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,9630.41\n2026-02-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,8530.41\n2026-02-03,NJ TRANSIT MONTHLY PASS,-64.00,8466.41\n2026-02-05,PSEG UTILITY AUTOPAY,-59.81,8406.60\n2026-02-06,MINT MOBILE,-30.00,8376.60\n2026-02-08,SPOTIFY STUDENT,-5.99,8370.61\n2026-02-09,TRADER JOES #612,-60.95,8309.66\n2026-02-10,OPTIMUM INTERNET,-50.00,8259.66\n2026-02-12,ACH DEBIT LEMONADE INC,-12.00,8247.66\n2026-02-13,CHIPOTLE JERSEY CITY,-12.16,8235.50\n2026-02-16,SQ *HUDSON GREENS,-76.09,8159.41\n2026-02-18,POS 4471 KWIK MART,-37.19,8122.22\n2026-02-20,TRANSFER TO SAVINGS,-250.00,7872.22\n2026-02-24,SQ *HUDSON GREENS,-97.96,7774.26\n2026-03-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,10174.26\n2026-03-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,9074.26\n2026-03-03,NJ TRANSIT MONTHLY PASS,-64.00,9010.26\n2026-03-05,PSEG UTILITY AUTOPAY,-73.42,8936.84\n2026-03-06,MINT MOBILE,-30.00,8906.84\n2026-03-08,SPOTIFY STUDENT,-5.99,8900.85\n2026-03-09,SQ *HUDSON GREENS,-65.87,8834.98\n2026-03-10,OPTIMUM INTERNET,-50.00,8784.98\n2026-03-12,ACH DEBIT LEMONADE INC,-12.00,8772.98\n2026-03-13,CHIPOTLE JERSEY CITY,-12.92,8760.06\n2026-03-14,WISE TRANSFER FROM S PATEL,300.00,9060.06\n2026-03-16,SQ *HUDSON GREENS,-89.99,8970.07\n2026-03-18,POS 4471 KWIK MART,-45.62,8924.45\n2026-03-20,TRANSFER TO SAVINGS,-250.00,8674.45\n2026-03-24,TRADER JOES #612,-79.13,8595.32\n2026-04-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,10995.32\n2026-04-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,9895.32\n2026-04-03,NJ TRANSIT MONTHLY PASS,-64.00,9831.32\n2026-04-05,PSEG UTILITY AUTOPAY,-51.88,9779.44\n2026-04-06,MINT MOBILE,-30.00,9749.44\n2026-04-08,SPOTIFY STUDENT,-5.99,9743.45\n2026-04-09,PATEL BROTHERS GROCERY,-84.10,9659.35\n2026-04-10,OPTIMUM INTERNET,-50.00,9609.35\n2026-04-12,ACH DEBIT LEMONADE INC,-12.00,9597.35\n2026-04-13,CHIPOTLE JERSEY CITY,-13.77,9583.58\n2026-04-16,PATEL BROTHERS GROCERY,-59.36,9524.22\n2026-04-18,POS 4471 KWIK MART,-40.67,9483.55\n2026-04-20,TRANSFER TO SAVINGS,-250.00,9233.55\n2026-04-24,SQ *HUDSON GREENS,-91.55,9142.00\n2026-05-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,11542.00\n2026-05-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,10442.00\n2026-05-03,NJ TRANSIT MONTHLY PASS,-64.00,10378.00\n2026-05-05,PSEG UTILITY AUTOPAY,-72.40,10305.60\n2026-05-06,MINT MOBILE,-30.00,10275.60\n2026-05-08,SPOTIFY STUDENT,-5.99,10269.61\n2026-05-09,SQ *HUDSON GREENS,-83.38,10186.23\n2026-05-10,OPTIMUM INTERNET,-50.00,10136.23\n2026-05-12,ACH DEBIT LEMONADE INC,-12.00,10124.23\n2026-05-13,CHIPOTLE JERSEY CITY,-14.00,10110.23\n2026-05-16,PATEL BROTHERS GROCERY,-61.61,10048.62\n2026-05-18,TARGET HOBOKEN,-51.77,9996.85\n2026-05-20,TRANSFER TO SAVINGS,-250.00,9746.85\n2026-05-24,PATEL BROTHERS GROCERY,-90.01,9656.84\n2026-06-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,12056.84\n2026-06-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,10956.84\n2026-06-03,NJ TRANSIT MONTHLY PASS,-64.00,10892.84\n2026-06-05,PSEG UTILITY AUTOPAY,-64.52,10828.32\n2026-06-06,MINT MOBILE,-30.00,10798.32\n2026-06-08,SPOTIFY STUDENT,-5.99,10792.33\n2026-06-09,PATEL BROTHERS GROCERY,-73.24,10719.09\n2026-06-10,OPTIMUM INTERNET,-50.00,10669.09\n2026-06-12,ACH DEBIT LEMONADE INC,-12.00,10657.09\n2026-06-13,CHIPOTLE JERSEY CITY,-11.35,10645.74\n2026-06-16,TRADER JOES #612,-68.39,10577.35\n2026-06-18,TARGET HOBOKEN,-42.65,10534.70\n2026-06-20,TRANSFER TO SAVINGS,-250.00,10284.70\n2026-06-24,SQ *HUDSON GREENS,-93.37,10191.33\n2026-07-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,12591.33\n2026-07-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,11491.33\n2026-07-03,NJ TRANSIT MONTHLY PASS,-64.00,11427.33\n2026-07-05,PSEG UTILITY AUTOPAY,-70.62,11356.71\n2026-07-06,MINT MOBILE,-30.00,11326.71\n2026-07-08,SPOTIFY STUDENT,-5.99,11320.72\n2026-07-09,TRADER JOES #612,-70.20,11250.52\n2026-07-10,OPTIMUM INTERNET,-50.00,11200.52\n2026-07-12,ACH DEBIT LEMONADE INC,-12.00,11188.52\n2026-07-13,CHIPOTLE JERSEY CITY,-11.35,11177.17\n2026-07-14,WISE TRANSFER FROM S PATEL,300.00,11477.17\n2026-07-16,PATEL BROTHERS GROCERY,-69.59,11407.58\n2026-07-18,TARGET HOBOKEN,-32.76,11374.82\n2026-07-20,TRANSFER TO SAVINGS,-250.00,11124.82\n2026-07-24,PATEL BROTHERS GROCERY,-95.22,11029.60\n2026-08-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,13429.60\n2026-08-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,12329.60\n2026-08-03,NJ TRANSIT MONTHLY PASS,-64.00,12265.60\n2026-08-05,PSEG UTILITY AUTOPAY,-76.56,12189.04\n2026-08-06,MINT MOBILE,-30.00,12159.04\n2026-08-08,SPOTIFY STUDENT,-5.99,12153.05\n2026-08-09,SQ *HUDSON GREENS,-84.03,12069.02\n2026-08-10,OPTIMUM INTERNET,-50.00,12019.02\n2026-08-12,ACH DEBIT LEMONADE INC,-12.00,12007.02\n2026-08-13,CHIPOTLE JERSEY CITY,-13.37,11993.65\n2026-08-16,PATEL BROTHERS GROCERY,-83.64,11910.01\n2026-08-18,TARGET HOBOKEN,-35.60,11874.41\n2026-08-20,TRANSFER TO SAVINGS,-250.00,11624.41\n2026-08-24,PATEL BROTHERS GROCERY,-67.34,11557.07\n2026-09-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,13957.07\n2026-09-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,12857.07\n2026-09-03,NJ TRANSIT MONTHLY PASS,-64.00,12793.07\n2026-09-05,PSEG UTILITY AUTOPAY,-58.30,12734.77\n2026-09-06,MINT MOBILE,-30.00,12704.77\n2026-09-08,SPOTIFY STUDENT,-5.99,12698.78\n2026-09-09,SQ *HUDSON GREENS,-95.94,12602.84\n2026-09-10,OPTIMUM INTERNET,-50.00,12552.84\n2026-09-12,ACH DEBIT LEMONADE INC,-12.00,12540.84\n2026-09-13,CHIPOTLE JERSEY CITY,-15.83,12525.01\n2026-09-16,SQ *HUDSON GREENS,-69.65,12455.36\n2026-09-18,AMAZON MKTPL,-60.85,12394.51\n2026-09-20,TRANSFER TO SAVINGS,-250.00,12144.51\n2026-09-24,TRADER JOES #612,-69.41,12075.10\n2026-10-01,STEVENS INST OF TECH STIPEND DIRECT DEP,2400.00,14475.10\n2026-10-01,ZELLE TO HUDSON PROPERTY MGMT RENT,-1100.00,13375.10\n2026-10-03,NJ TRANSIT MONTHLY PASS,-64.00,13311.10\n2026-10-05,PSEG UTILITY AUTOPAY,-48.62,13262.48\n2026-10-06,MINT MOBILE,-30.00,13232.48\n2026-10-08,SPOTIFY STUDENT,-5.99,13226.49\n2026-10-09,TRADER JOES #612,-63.51,13162.98\n2026-10-10,OPTIMUM INTERNET,-50.00,13112.98\n2026-10-12,ACH DEBIT LEMONADE INC,-12.00,13100.98\n2026-10-13,CHIPOTLE JERSEY CITY,-13.53,13087.45\n2026-10-16,PATEL BROTHERS GROCERY,-70.40,13017.05\n2026-10-18,AMAZON MKTPL,-47.24,12969.81\n2026-10-20,TRANSFER TO SAVINGS,-250.00,12719.81\n2026-10-24,SQ *HUDSON GREENS,-101.09,12618.72\n"}, "marcus": {"name": "Marcus Johnson", "from": "USA", "tag": "Delivery driver, uneven pay", "dots": ["good", "good", "good", "good", "good", "warn", "good", "good"], "csv": "date,description,amount,balance\n2025-05-01,ZELLE TO R GOMEZ RENT,-950.00,-50.00\n2025-05-04,SQ *LAUNDROMAT JC,-142.51,-192.51\n2025-05-05,PROGRESSIVE AUTO INS,-168.00,-360.51\n2025-05-06,UBER DRIVER WEEKLY PAYOUT,838.08,477.57\n2025-05-08,T-MOBILE,-65.00,412.57\n2025-05-09,SHELL OIL 5741,-140.45,272.12\n2025-05-12,PSEG UTILITY AUTOPAY,-80.00,192.12\n2025-05-13,DOORDASH DASHER PAYOUT,834.84,1026.96\n2025-05-14,SQ *LAUNDROMAT JC,-106.47,920.49\n2025-05-15,TOYOTA FINANCIAL CAR PMT,-342.00,578.49\n2025-05-19,POPEYES #1192,-128.35,450.14\n2025-05-20,DOORDASH DASHER PAYOUT,482.95,933.09\n2025-05-24,SQ *LAUNDROMAT JC,-125.37,807.72\n2025-05-27,UBER DRIVER WEEKLY PAYOUT,494.13,1301.85\n2025-05-28,SHELL OIL 5741,-151.85,1150.00\n2025-06-01,ZELLE TO R GOMEZ RENT,-950.00,200.00\n2025-06-04,SQ *LAUNDROMAT JC,-166.41,33.59\n2025-06-05,PROGRESSIVE AUTO INS,-168.00,-134.41\n2025-06-06,DOORDASH DASHER PAYOUT,828.78,694.37\n2025-06-08,T-MOBILE,-65.00,629.37\n2025-06-09,SHOPRITE #221,-141.23,488.14\n2025-06-12,PSEG UTILITY AUTOPAY,-80.00,408.14\n2025-06-13,DOORDASH DASHER PAYOUT,816.68,1224.82\n2025-06-14,POPEYES #1192,-176.97,1047.85\n2025-06-15,TOYOTA FINANCIAL CAR PMT,-342.00,705.85\n2025-06-19,POPEYES #1192,-154.61,551.24\n2025-06-20,UBER DRIVER WEEKLY PAYOUT,613.48,1164.72\n2025-06-24,SQ *LAUNDROMAT JC,-198.92,965.80\n2025-06-27,UBER DRIVER WEEKLY PAYOUT,841.06,1806.86\n2025-06-28,SHELL OIL 5741,-256.87,1549.99\n2025-07-01,ZELLE TO R GOMEZ RENT,-950.00,599.99\n2025-07-04,POPEYES #1192,-52.04,547.95\n2025-07-05,PROGRESSIVE AUTO INS,-168.00,379.95\n2025-07-06,UBER DRIVER WEEKLY PAYOUT,454.21,834.16\n2025-07-08,T-MOBILE,-65.00,769.16\n2025-07-09,SHELL OIL 5741,-65.69,703.47\n2025-07-12,PSEG UTILITY AUTOPAY,-80.00,623.47\n2025-07-13,DOORDASH DASHER PAYOUT,353.00,976.47\n2025-07-14,SQ *LAUNDROMAT JC,-52.38,924.09\n2025-07-15,TOYOTA FINANCIAL CAR PMT,-342.00,582.09\n2025-07-19,SQ *LAUNDROMAT JC,-62.76,519.33\n2025-07-20,DOORDASH DASHER PAYOUT,498.61,1017.94\n2025-07-24,POPEYES #1192,-47.76,970.18\n2025-07-27,UBER DRIVER WEEKLY PAYOUT,494.18,1464.36\n2025-07-28,POPEYES #1192,-64.37,1399.99\n2025-08-01,ZELLE TO R GOMEZ RENT,-950.00,449.99\n2025-08-04,SHELL OIL 5741,-125.40,324.59\n2025-08-05,PROGRESSIVE AUTO INS,-168.00,156.59\n2025-08-06,DOORDASH DASHER PAYOUT,553.49,710.08\n2025-08-08,T-MOBILE,-65.00,645.08\n2025-08-09,SHOPRITE #221,-110.57,534.51\n2025-08-12,PSEG UTILITY AUTOPAY,-80.00,454.51\n2025-08-13,DOORDASH DASHER PAYOUT,638.90,1093.41\n2025-08-14,POPEYES #1192,-98.65,994.76\n2025-08-15,TOYOTA FINANCIAL CAR PMT,-342.00,652.76\n2025-08-19,SQ *LAUNDROMAT JC,-99.45,553.31\n2025-08-20,DOORDASH DASHER PAYOUT,600.72,1154.03\n2025-08-24,SHELL OIL 5741,-107.34,1046.69\n2025-08-27,DOORDASH DASHER PAYOUT,606.89,1653.58\n2025-08-28,SQ *LAUNDROMAT JC,-103.59,1549.99\n2025-09-01,ZELLE TO R GOMEZ RENT,-950.00,599.99\n2025-09-04,SHOPRITE #221,-247.56,352.43\n2025-09-05,PROGRESSIVE AUTO INS,-168.00,184.43\n2025-09-06,UBER DRIVER WEEKLY PAYOUT,1195.60,1380.03\n2025-09-08,T-MOBILE,-65.00,1315.03\n2025-09-09,SHOPRITE #221,-239.57,1075.46\n2025-09-12,PSEG UTILITY AUTOPAY,-80.00,995.46\n2025-09-13,UBER DRIVER WEEKLY PAYOUT,1138.53,2133.99\n2025-09-14,SHELL OIL 5741,-351.14,1782.85\n2025-09-15,TOYOTA FINANCIAL CAR PMT,-342.00,1440.85\n2025-09-19,POPEYES #1192,-218.87,1221.98\n2025-09-20,UBER DRIVER WEEKLY PAYOUT,880.11,2102.09\n2025-09-24,SHELL OIL 5741,-290.42,1811.67\n2025-09-27,UBER DRIVER WEEKLY PAYOUT,685.76,2497.43\n2025-09-28,SHELL OIL 5741,-347.43,2150.00\n2025-10-01,ZELLE TO R GOMEZ RENT,-950.00,1200.00\n2025-10-04,SQ *LAUNDROMAT JC,-158.00,1042.00\n2025-10-05,PROGRESSIVE AUTO INS,-168.00,874.00\n2025-10-06,UBER DRIVER WEEKLY PAYOUT,744.42,1618.42\n2025-10-08,T-MOBILE,-65.00,1553.42\n2025-10-09,SHELL OIL 5741,-132.83,1420.59\n2025-10-12,PSEG UTILITY AUTOPAY,-80.00,1340.59\n2025-10-13,UBER DRIVER WEEKLY PAYOUT,651.68,1992.27\n2025-10-14,SHOPRITE #221,-215.76,1776.51\n2025-10-15,TOYOTA FINANCIAL CAR PMT,-342.00,1434.51\n2025-10-19,SHOPRITE #221,-195.11,1239.40\n2025-10-20,UBER DRIVER WEEKLY PAYOUT,895.54,2134.94\n2025-10-24,SHELL OIL 5741,-173.39,1961.55\n2025-10-27,UBER DRIVER WEEKLY PAYOUT,608.36,2569.91\n2025-10-28,SHELL OIL 5741,-119.91,2450.00\n2025-11-01,ZELLE TO R GOMEZ RENT,-950.00,1500.00\n2025-11-04,SHOPRITE #221,-76.72,1423.28\n2025-11-05,PROGRESSIVE AUTO INS,-168.00,1255.28\n2025-11-06,DOORDASH DASHER PAYOUT,512.82,1768.10\n2025-11-09,POPEYES #1192,-91.79,1676.31\n2025-11-12,PSEG UTILITY AUTOPAY,-80.00,1596.31\n2025-11-13,DOORDASH DASHER PAYOUT,604.81,2201.12\n2025-11-14,SHOPRITE #221,-90.56,2110.56\n2025-11-15,TOYOTA FINANCIAL CAR PMT,-342.00,1768.56\n2025-11-18,T-MOBILE,-65.00,1703.56\n2025-11-19,SHELL OIL 5741,-98.25,1605.31\n2025-11-20,UBER DRIVER WEEKLY PAYOUT,647.99,2253.30\n2025-11-24,SHELL OIL 5741,-91.30,2162.00\n2025-11-27,DOORDASH DASHER PAYOUT,434.38,2596.38\n2025-11-28,SHELL OIL 5741,-96.37,2500.01\n2025-12-01,ZELLE TO R GOMEZ RENT,-950.00,1550.01\n2025-12-04,SHOPRITE #221,-72.76,1477.25\n2025-12-05,PROGRESSIVE AUTO INS,-168.00,1309.25\n2025-12-06,DOORDASH DASHER PAYOUT,317.19,1626.44\n2025-12-08,T-MOBILE,-65.00,1561.44\n2025-12-09,SHELL OIL 5741,-53.74,1507.70\n2025-12-12,PSEG UTILITY AUTOPAY,-80.00,1427.70\n2025-12-13,DOORDASH DASHER PAYOUT,520.74,1948.44\n2025-12-14,SHELL OIL 5741,-50.92,1897.52\n2025-12-15,TOYOTA FINANCIAL CAR PMT,-342.00,1555.52\n2025-12-19,SHELL OIL 5741,-76.19,1479.33\n2025-12-20,DOORDASH DASHER PAYOUT,563.27,2042.60\n2025-12-24,SHOPRITE #221,-64.87,1977.73\n2025-12-27,UBER DRIVER WEEKLY PAYOUT,448.79,2426.52\n2025-12-28,SHOPRITE #221,-66.52,2360.00\n2026-01-01,ZELLE TO R GOMEZ RENT,-950.00,1410.00\n2026-01-04,POPEYES #1192,-175.38,1234.62\n2026-01-05,PROGRESSIVE AUTO INS,-168.00,1066.62\n2026-01-06,UBER DRIVER WEEKLY PAYOUT,685.43,1752.05\n2026-01-08,T-MOBILE,-65.00,1687.05\n2026-01-09,SHELL OIL 5741,-176.36,1510.69\n2026-01-12,PSEG UTILITY AUTOPAY,-80.00,1430.69\n2026-01-13,UBER DRIVER WEEKLY PAYOUT,830.31,2261.00\n2026-01-14,SQ *LAUNDROMAT JC,-197.25,2063.75\n2026-01-15,TOYOTA FINANCIAL CAR PMT,-342.00,1721.75\n2026-01-19,SHELL OIL 5741,-276.92,1444.83\n2026-01-20,UBER DRIVER WEEKLY PAYOUT,716.66,2161.49\n2026-01-24,SHOPRITE #221,-253.21,1908.28\n2026-01-27,DOORDASH DASHER PAYOUT,1067.60,2975.88\n2026-01-28,SHELL OIL 5741,-215.87,2760.01\n2026-02-01,ZELLE TO R GOMEZ RENT,-950.00,1810.01\n2026-02-04,POPEYES #1192,-179.88,1630.13\n2026-02-05,PROGRESSIVE AUTO INS,-168.00,1462.13\n2026-02-06,UBER DRIVER WEEKLY PAYOUT,734.12,2196.25\n2026-02-08,T-MOBILE,-65.00,2131.25\n2026-02-09,SHOPRITE #221,-119.33,2011.92\n2026-02-12,PSEG UTILITY AUTOPAY,-80.00,1931.92\n2026-02-13,UBER DRIVER WEEKLY PAYOUT,627.88,2559.80\n2026-02-14,SHOPRITE #221,-111.75,2448.05\n2026-02-15,TOYOTA FINANCIAL CAR PMT,-342.00,2106.05\n2026-02-19,POPEYES #1192,-172.28,1933.77\n2026-02-20,UBER DRIVER WEEKLY PAYOUT,794.38,2728.15\n2026-02-24,POPEYES #1192,-152.04,2576.11\n2026-02-27,UBER DRIVER WEEKLY PAYOUT,593.62,3169.73\n2026-02-28,SQ *LAUNDROMAT JC,-159.71,3010.02\n2026-03-01,ZELLE TO R GOMEZ RENT,-950.00,2060.02\n2026-03-04,SHELL OIL 5741,-87.60,1972.42\n2026-03-05,PROGRESSIVE AUTO INS,-168.00,1804.42\n2026-03-06,UBER DRIVER WEEKLY PAYOUT,418.92,2223.34\n2026-03-08,T-MOBILE,-65.00,2158.34\n2026-03-09,SHELL OIL 5741,-157.10,2001.24\n2026-03-12,PSEG UTILITY AUTOPAY,-80.00,1921.24\n2026-03-13,UBER DRIVER WEEKLY PAYOUT,619.92,2541.16\n2026-03-14,POPEYES #1192,-94.92,2446.24\n2026-03-15,TOYOTA FINANCIAL CAR PMT,-342.00,2104.24\n2026-03-19,SHELL OIL 5741,-113.22,1991.02\n2026-03-20,DOORDASH DASHER PAYOUT,722.22,2713.24\n2026-03-24,SHELL OIL 5741,-137.14,2576.10\n2026-03-27,DOORDASH DASHER PAYOUT,738.95,3315.05\n2026-03-28,SHELL OIL 5741,-155.02,3160.03\n2026-04-01,ZELLE TO R GOMEZ RENT,-950.00,2210.03\n2026-04-04,SHELL OIL 5741,-224.47,1985.56\n2026-04-06,UBER DRIVER WEEKLY PAYOUT,675.23,2660.79\n2026-04-08,T-MOBILE,-65.00,2595.79\n2026-04-09,SHOPRITE #221,-286.59,2309.20\n2026-04-12,PSEG UTILITY AUTOPAY,-80.00,2229.20\n2026-04-13,DOORDASH DASHER PAYOUT,960.62,3189.82\n2026-04-14,POPEYES #1192,-202.52,2987.30\n2026-04-15,TOYOTA FINANCIAL CAR PMT,-342.00,2645.30\n2026-04-19,SHOPRITE #221,-236.90,2408.40\n2026-04-20,DOORDASH DASHER PAYOUT,985.38,3393.78\n2026-04-22,PROGRESSIVE AUTO INS,-168.00,3225.78\n2026-04-24,SHELL OIL 5741,-251.35,2974.43\n2026-04-27,DOORDASH DASHER PAYOUT,978.78,3953.21\n2026-04-28,SQ *LAUNDROMAT JC,-343.17,3610.04\n2026-05-01,ZELLE TO R GOMEZ RENT,-950.00,2660.04\n2026-05-04,POPEYES #1192,-54.15,2605.89\n2026-05-05,PROGRESSIVE AUTO INS,-168.00,2437.89\n2026-05-06,UBER DRIVER WEEKLY PAYOUT,518.24,2956.13\n2026-05-08,T-MOBILE,-65.00,2891.13\n2026-05-09,SHELL OIL 5741,-87.57,2803.56\n2026-05-12,PSEG UTILITY AUTOPAY,-80.00,2723.56\n2026-05-13,DOORDASH DASHER PAYOUT,633.50,3357.06\n2026-05-14,POPEYES #1192,-78.49,3278.57\n2026-05-15,TOYOTA FINANCIAL CAR PMT,-342.00,2936.57\n2026-05-19,SHELL OIL 5741,-92.33,2844.24\n2026-05-20,UBER DRIVER WEEKLY PAYOUT,439.59,3283.83\n2026-05-24,SHELL OIL 5741,-80.73,3203.10\n2026-05-27,UBER DRIVER WEEKLY PAYOUT,508.67,3711.77\n2026-05-28,POPEYES #1192,-51.73,3660.04\n2026-06-01,ZELLE TO R GOMEZ RENT,-950.00,2710.04\n2026-06-04,SQ *LAUNDROMAT JC,-153.03,2557.01\n2026-06-05,PROGRESSIVE AUTO INS,-168.00,2389.01\n2026-06-06,DOORDASH DASHER PAYOUT,610.71,2999.72\n2026-06-08,T-MOBILE,-65.00,2934.72\n2026-06-09,SQ *LAUNDROMAT JC,-181.18,2753.54\n2026-06-12,PSEG UTILITY AUTOPAY,-80.00,2673.54\n2026-06-13,DOORDASH DASHER PAYOUT,719.70,3393.24\n2026-06-14,SHELL OIL 5741,-156.07,3237.17\n2026-06-15,TOYOTA FINANCIAL CAR PMT,-342.00,2895.17\n2026-06-19,SHELL OIL 5741,-174.49,2720.68\n2026-06-20,DOORDASH DASHER PAYOUT,770.72,3491.40\n2026-06-24,SHELL OIL 5741,-202.01,3289.39\n2026-06-27,DOORDASH DASHER PAYOUT,948.87,4238.26\n2026-06-28,SHOPRITE #221,-228.22,4010.04\n2026-07-01,ZELLE TO R GOMEZ RENT,-950.00,3060.04\n2026-07-04,SHOPRITE #221,-61.35,2998.69\n2026-07-05,PROGRESSIVE AUTO INS,-168.00,2830.69\n2026-07-06,UBER DRIVER WEEKLY PAYOUT,618.94,3449.63\n2026-07-08,T-MOBILE,-65.00,3384.63\n2026-07-09,SQ *LAUNDROMAT JC,-73.87,3310.76\n2026-07-12,PSEG UTILITY AUTOPAY,-80.00,3230.76\n2026-07-13,UBER DRIVER WEEKLY PAYOUT,375.52,3606.28\n2026-07-14,POPEYES #1192,-80.83,3525.45\n2026-07-15,TOYOTA FINANCIAL CAR PMT,-342.00,3183.45\n2026-07-19,SHELL OIL 5741,-58.94,3124.51\n2026-07-20,UBER DRIVER WEEKLY PAYOUT,452.80,3577.31\n2026-07-24,SHELL OIL 5741,-52.76,3524.55\n2026-07-27,DOORDASH DASHER PAYOUT,352.74,3877.29\n2026-07-28,SQ *LAUNDROMAT JC,-57.27,3820.02\n2026-08-01,ZELLE TO R GOMEZ RENT,-950.00,2870.02\n2026-08-04,SHELL OIL 5741,-53.62,2816.40\n2026-08-05,PROGRESSIVE AUTO INS,-168.00,2648.40\n2026-08-06,UBER DRIVER WEEKLY PAYOUT,442.54,3090.94\n2026-08-08,T-MOBILE,-65.00,3025.94\n2026-08-09,POPEYES #1192,-61.91,2964.03\n2026-08-10,NSF FEE RETURNED ITEM,-35.00,2929.03\n2026-08-12,PSEG UTILITY AUTOPAY,-80.00,2849.03\n2026-08-13,DOORDASH DASHER PAYOUT,525.58,3374.61\n2026-08-14,SHELL OIL 5741,-64.89,3309.72\n2026-08-15,TOYOTA FINANCIAL CAR PMT,-342.00,2967.72\n2026-08-19,POPEYES #1192,-50.89,2916.83\n2026-08-20,DOORDASH DASHER PAYOUT,417.83,3334.66\n2026-08-24,SHELL OIL 5741,-62.49,3272.17\n2026-08-27,UBER DRIVER WEEKLY PAYOUT,414.06,3686.23\n2026-08-28,POPEYES #1192,-51.20,3635.03\n2026-09-01,ZELLE TO R GOMEZ RENT,-950.00,2685.03\n2026-09-03,NSF FEE RETURNED ITEM,-35.00,2650.03\n2026-09-04,POPEYES #1192,-310.32,2339.71\n2026-09-05,PROGRESSIVE AUTO INS,-168.00,2171.71\n2026-09-06,UBER DRIVER WEEKLY PAYOUT,1022.95,3194.66\n2026-09-08,T-MOBILE,-65.00,3129.66\n2026-09-09,SHOPRITE #221,-242.44,2887.22\n2026-09-12,PSEG UTILITY AUTOPAY,-80.00,2807.22\n2026-09-13,UBER DRIVER WEEKLY PAYOUT,895.69,3702.91\n2026-09-14,SHELL OIL 5741,-320.43,3382.48\n2026-09-15,TOYOTA FINANCIAL CAR PMT,-342.00,3040.48\n2026-09-19,SHELL OIL 5741,-325.76,2714.72\n2026-09-20,UBER DRIVER WEEKLY PAYOUT,1163.15,3877.87\n2026-09-24,POPEYES #1192,-231.54,3646.33\n2026-09-27,DOORDASH DASHER PAYOUT,818.22,4464.55\n2026-09-28,SHOPRITE #221,-264.51,4200.04\n2026-10-01,ZELLE TO R GOMEZ RENT,-950.00,3250.04\n2026-10-04,POPEYES #1192,-188.70,3061.34\n2026-10-05,PROGRESSIVE AUTO INS,-168.00,2893.34\n2026-10-06,UBER DRIVER WEEKLY PAYOUT,656.98,3550.32\n2026-10-08,T-MOBILE,-65.00,3485.32\n2026-10-09,POPEYES #1192,-173.09,3312.23\n2026-10-12,PSEG UTILITY AUTOPAY,-80.00,3232.23\n2026-10-13,DOORDASH DASHER PAYOUT,614.35,3846.58\n2026-10-14,SHELL OIL 5741,-134.11,3712.47\n2026-10-15,TOYOTA FINANCIAL CAR PMT,-342.00,3370.47\n2026-10-19,SQ *LAUNDROMAT JC,-194.61,3175.86\n2026-10-20,UBER DRIVER WEEKLY PAYOUT,717.91,3893.77\n2026-10-24,SQ *LAUNDROMAT JC,-128.82,3764.95\n2026-10-24,NSF FEE RETURNED ITEM,-35.00,3729.95\n2026-10-27,DOORDASH DASHER PAYOUT,710.76,4440.71\n2026-10-28,SHOPRITE #221,-175.67,4265.04\n"}, "jordan": {"name": "Jordan Lee", "from": "USA", "tag": "Big salary, bigger spending", "dots": ["good", "good", "good", "bad", "warn", "bad", "warn", "bad"], "csv": "date,description,amount,balance\n2025-05-01,AVALON NEWPORT RENT ACH,-2450.00,150.00\n2025-05-02,VENMO PAYMENT,-145.77,4.23\n2025-05-03,BMW FINANCIAL LEASE,-589.00,-584.77\n2025-05-04,EQUINOX MEMBERSHIP,-260.00,-844.77\n2025-05-05,THE PRESS LOUNGE,-177.55,-1022.32\n2025-05-06,VERIZON WIRELESS,-85.00,-1107.32\n2025-05-07,CHASE CARD MIN PMT,-185.00,-1292.32\n2025-05-08,NOBU NYC,-159.47,-1451.79\n2025-05-10,AFFIRM PAY LATER,-212.50,-1664.29\n2025-05-11,SEPHORA,-183.75,-1848.04\n2025-05-13,NOBU NYC,-186.01,-2034.05\n2025-05-15,ACME CORP PAYROLL DIRECT DEP,2750.00,715.95\n2025-05-17,THE PRESS LOUNGE,-127.87,588.08\n2025-05-19,UBER EATS,-122.44,465.64\n2025-05-21,AMAZON.COM,-207.98,257.66\n2025-05-23,NOBU NYC,-147.99,109.67\n2025-05-25,UBER EATS,-145.39,-35.72\n2025-05-27,TICKETMASTER,-224.40,-260.12\n2025-05-29,UBER EATS,-169.88,-430.00\n2025-05-31,ACME CORP PAYROLL DIRECT DEP,2750.00,2320.00\n2025-06-01,AVALON NEWPORT RENT ACH,-2450.00,-130.00\n2025-06-02,UBER EATS,-200.97,-330.97\n2025-06-03,BMW FINANCIAL LEASE,-589.00,-919.97\n2025-06-04,EQUINOX MEMBERSHIP,-260.00,-1179.97\n2025-06-05,NOBU NYC,-145.02,-1324.99\n2025-06-06,VERIZON WIRELESS,-85.00,-1409.99\n2025-06-07,CHASE CARD MIN PMT,-185.00,-1594.99\n2025-06-08,VENMO PAYMENT,-177.87,-1772.86\n2025-06-10,AFFIRM PAY LATER,-212.50,-1985.36\n2025-06-11,SEPHORA,-210.73,-2196.09\n2025-06-13,TICKETMASTER,-156.95,-2353.04\n2025-06-15,ACME CORP PAYROLL DIRECT DEP,2750.00,396.96\n2025-06-17,THE PRESS LOUNGE,-197.39,199.57\n2025-06-19,TICKETMASTER,-160.92,38.65\n2025-06-21,THE PRESS LOUNGE,-191.34,-152.69\n2025-06-23,THE PRESS LOUNGE,-176.07,-328.76\n2025-06-25,AIRBNB,-215.16,-543.92\n2025-06-27,THE PRESS LOUNGE,-131.36,-675.28\n2025-06-29,SEPHORA,-154.72,-830.00\n2025-06-30,ACME CORP PAYROLL DIRECT DEP,2750.00,1920.00\n2025-07-01,AVALON NEWPORT RENT ACH,-2450.00,-530.00\n2025-07-02,SEPHORA,-199.73,-729.73\n2025-07-03,BMW FINANCIAL LEASE,-589.00,-1318.73\n2025-07-04,EQUINOX MEMBERSHIP,-260.00,-1578.73\n2025-07-05,TICKETMASTER,-178.30,-1757.03\n2025-07-06,VERIZON WIRELESS,-85.00,-1842.03\n2025-07-07,CHASE CARD MIN PMT,-185.00,-2027.03\n2025-07-08,TICKETMASTER,-202.11,-2229.14\n2025-07-10,AFFIRM PAY LATER,-212.50,-2441.64\n2025-07-11,AMAZON.COM,-195.12,-2636.76\n2025-07-13,AMAZON.COM,-208.10,-2844.86\n2025-07-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-94.86\n2025-07-17,VENMO PAYMENT,-177.26,-272.12\n2025-07-19,VENMO PAYMENT,-128.25,-400.37\n2025-07-21,AMAZON.COM,-195.53,-595.90\n2025-07-23,AIRBNB,-205.56,-801.46\n2025-07-25,AMAZON.COM,-199.78,-1001.24\n2025-07-27,THE PRESS LOUNGE,-167.41,-1168.65\n2025-07-29,NOBU NYC,-181.37,-1350.02\n2025-07-31,ACME CORP PAYROLL DIRECT DEP,2750.00,1399.98\n2025-08-01,AVALON NEWPORT RENT ACH,-2450.00,-1050.02\n2025-08-02,UBER EATS,-127.20,-1177.22\n2025-08-03,BMW FINANCIAL LEASE,-589.00,-1766.22\n2025-08-04,EQUINOX MEMBERSHIP,-260.00,-2026.22\n2025-08-05,TICKETMASTER,-170.82,-2197.04\n2025-08-06,VERIZON WIRELESS,-85.00,-2282.04\n2025-08-07,CHASE CARD MIN PMT,-185.00,-2467.04\n2025-08-08,UBER EATS,-169.54,-2636.58\n2025-08-10,AFFIRM PAY LATER,-212.50,-2849.08\n2025-08-11,AMAZON.COM,-137.78,-2986.86\n2025-08-13,AMAZON.COM,-189.88,-3176.74\n2025-08-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-426.74\n2025-08-17,UBER EATS,-206.67,-633.41\n2025-08-19,SEPHORA,-165.53,-798.94\n2025-08-21,THE PRESS LOUNGE,-187.88,-986.82\n2025-08-23,TICKETMASTER,-184.08,-1170.90\n2025-08-25,TICKETMASTER,-223.84,-1394.74\n2025-08-27,NOBU NYC,-154.95,-1549.69\n2025-08-29,UBER EATS,-150.33,-1700.02\n2025-08-31,ACME CORP PAYROLL DIRECT DEP,2750.00,1049.98\n2025-09-01,AVALON NEWPORT RENT ACH,-2450.00,-1400.02\n2025-09-02,TICKETMASTER,-237.71,-1637.73\n2025-09-03,BMW FINANCIAL LEASE,-589.00,-2226.73\n2025-09-04,EQUINOX MEMBERSHIP,-260.00,-2486.73\n2025-09-05,THE PRESS LOUNGE,-166.83,-2653.56\n2025-09-06,VERIZON WIRELESS,-85.00,-2738.56\n2025-09-07,CHASE CARD MIN PMT,-185.00,-2923.56\n2025-09-08,SEPHORA,-169.09,-3092.65\n2025-09-10,AFFIRM PAY LATER,-212.50,-3305.15\n2025-09-11,TICKETMASTER,-144.52,-3449.67\n2025-09-13,THE PRESS LOUNGE,-224.63,-3674.30\n2025-09-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-924.30\n2025-09-17,TICKETMASTER,-170.92,-1095.22\n2025-09-19,TICKETMASTER,-225.53,-1320.75\n2025-09-21,AIRBNB,-171.97,-1492.72\n2025-09-23,UBER EATS,-225.19,-1717.91\n2025-09-25,THE PRESS LOUNGE,-204.61,-1922.52\n2025-09-27,AIRBNB,-140.56,-2063.08\n2025-09-29,UBER EATS,-236.94,-2300.02\n2025-09-30,ACME CORP PAYROLL DIRECT DEP,2750.00,449.98\n2025-10-01,AVALON NEWPORT RENT ACH,-2450.00,-2000.02\n2025-10-02,UBER EATS,-169.01,-2169.03\n2025-10-03,BMW FINANCIAL LEASE,-589.00,-2758.03\n2025-10-04,EQUINOX MEMBERSHIP,-260.00,-3018.03\n2025-10-05,AIRBNB,-192.30,-3210.33\n2025-10-06,VERIZON WIRELESS,-85.00,-3295.33\n2025-10-07,CHASE CARD MIN PMT,-185.00,-3480.33\n2025-10-08,TICKETMASTER,-142.37,-3622.70\n2025-10-10,AFFIRM PAY LATER,-212.50,-3835.20\n2025-10-11,VENMO PAYMENT,-197.16,-4032.36\n2025-10-13,TICKETMASTER,-164.18,-4196.54\n2025-10-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-1446.54\n2025-10-17,AIRBNB,-166.42,-1612.96\n2025-10-19,NOBU NYC,-228.24,-1841.20\n2025-10-21,AIRBNB,-194.45,-2035.65\n2025-10-23,NOBU NYC,-158.32,-2193.97\n2025-10-25,AIRBNB,-181.38,-2375.35\n2025-10-27,AIRBNB,-192.32,-2567.67\n2025-10-29,TICKETMASTER,-232.35,-2800.02\n2025-10-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-50.02\n2025-11-01,AVALON NEWPORT RENT ACH,-2450.00,-2500.02\n2025-11-02,AMAZON.COM,-167.63,-2667.65\n2025-11-02,OVERDRAFT FEE,-34.00,-2701.65\n2025-11-03,BMW FINANCIAL LEASE,-589.00,-3290.65\n2025-11-04,EQUINOX MEMBERSHIP,-260.00,-3550.65\n2025-11-05,AMAZON.COM,-176.40,-3727.05\n2025-11-06,VERIZON WIRELESS,-85.00,-3812.05\n2025-11-07,CHASE CARD MIN PMT,-185.00,-3997.05\n2025-11-08,AIRBNB,-221.54,-4218.59\n2025-11-10,AFFIRM PAY LATER,-212.50,-4431.09\n2025-11-11,AIRBNB,-136.38,-4567.47\n2025-11-13,SEPHORA,-198.34,-4765.81\n2025-11-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-2015.81\n2025-11-17,VENMO PAYMENT,-217.30,-2233.11\n2025-11-19,NOBU NYC,-168.72,-2401.83\n2025-11-21,AMAZON.COM,-158.73,-2560.56\n2025-11-23,AIRBNB,-225.14,-2785.70\n2025-11-25,SEPHORA,-160.57,-2946.27\n2025-11-27,VENMO PAYMENT,-154.71,-3100.98\n2025-11-29,TICKETMASTER,-183.03,-3284.01\n2025-11-30,ACME CORP PAYROLL DIRECT DEP,2750.00,-534.01\n2025-12-01,AVALON NEWPORT RENT ACH,-2450.00,-2984.01\n2025-12-02,NOBU NYC,-161.76,-3145.77\n2025-12-03,BMW FINANCIAL LEASE,-589.00,-3734.77\n2025-12-04,EQUINOX MEMBERSHIP,-260.00,-3994.77\n2025-12-05,THE PRESS LOUNGE,-149.66,-4144.43\n2025-12-06,VERIZON WIRELESS,-85.00,-4229.43\n2025-12-07,CHASE CARD MIN PMT,-185.00,-4414.43\n2025-12-08,TICKETMASTER,-197.17,-4611.60\n2025-12-10,AFFIRM PAY LATER,-212.50,-4824.10\n2025-12-11,TICKETMASTER,-157.79,-4981.89\n2025-12-13,VENMO PAYMENT,-229.38,-5211.27\n2025-12-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-2461.27\n2025-12-17,AIRBNB,-233.07,-2694.34\n2025-12-19,THE PRESS LOUNGE,-156.95,-2851.29\n2025-12-21,TICKETMASTER,-167.99,-3019.28\n2025-12-23,THE PRESS LOUNGE,-229.44,-3248.72\n2025-12-25,THE PRESS LOUNGE,-210.22,-3458.94\n2025-12-27,UBER EATS,-229.32,-3688.26\n2025-12-29,THE PRESS LOUNGE,-175.74,-3864.00\n2025-12-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-1114.00\n2026-01-01,AVALON NEWPORT RENT ACH,-2450.00,-3564.00\n2026-01-02,TICKETMASTER,-144.03,-3708.03\n2026-01-03,BMW FINANCIAL LEASE,-589.00,-4297.03\n2026-01-04,EQUINOX MEMBERSHIP,-260.00,-4557.03\n2026-01-05,AIRBNB,-127.55,-4684.58\n2026-01-06,VERIZON WIRELESS,-85.00,-4769.58\n2026-01-07,CHASE CARD MIN PMT,-185.00,-4954.58\n2026-01-08,SEPHORA,-229.76,-5184.34\n2026-01-10,AFFIRM PAY LATER,-212.50,-5396.84\n2026-01-11,AMAZON.COM,-222.87,-5619.71\n2026-01-13,TICKETMASTER,-234.52,-5854.23\n2026-01-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-3104.23\n2026-01-17,AMAZON.COM,-174.35,-3278.58\n2026-01-19,SEPHORA,-230.52,-3509.10\n2026-01-21,UBER EATS,-228.03,-3737.13\n2026-01-23,UBER EATS,-151.23,-3888.36\n2026-01-25,SEPHORA,-208.23,-4096.59\n2026-01-27,THE PRESS LOUNGE,-218.16,-4314.75\n2026-01-29,UBER EATS,-199.24,-4513.99\n2026-01-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-1763.99\n2026-02-01,AVALON NEWPORT RENT ACH,-2450.00,-4213.99\n2026-02-02,VENMO PAYMENT,-133.13,-4347.12\n2026-02-03,BMW FINANCIAL LEASE,-589.00,-4936.12\n2026-02-03,OVERDRAFT FEE,-34.00,-4970.12\n2026-02-04,EQUINOX MEMBERSHIP,-260.00,-5230.12\n2026-02-05,UBER EATS,-215.74,-5445.86\n2026-02-06,VERIZON WIRELESS,-85.00,-5530.86\n2026-02-07,CHASE CARD MIN PMT,-185.00,-5715.86\n2026-02-08,AIRBNB,-151.03,-5866.89\n2026-02-10,AFFIRM PAY LATER,-212.50,-6079.39\n2026-02-11,SEPHORA,-165.48,-6244.87\n2026-02-13,SEPHORA,-206.44,-6451.31\n2026-02-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-3701.31\n2026-02-17,AMAZON.COM,-190.88,-3892.19\n2026-02-19,AMAZON.COM,-178.33,-4070.52\n2026-02-21,NOBU NYC,-237.60,-4308.12\n2026-02-23,SEPHORA,-200.72,-4508.84\n2026-02-25,TICKETMASTER,-170.16,-4679.00\n2026-02-27,NOBU NYC,-160.13,-4839.13\n2026-02-28,ACME CORP PAYROLL DIRECT DEP,2750.00,-2089.13\n2026-02-28,UBER EATS,-228.87,-2318.00\n2026-03-01,AVALON NEWPORT RENT ACH,-2450.00,-4768.00\n2026-03-02,UBER EATS,-178.84,-4946.84\n2026-03-03,BMW FINANCIAL LEASE,-589.00,-5535.84\n2026-03-04,EQUINOX MEMBERSHIP,-260.00,-5795.84\n2026-03-05,AMAZON.COM,-187.86,-5983.70\n2026-03-06,VERIZON WIRELESS,-85.00,-6068.70\n2026-03-07,CHASE CARD MIN PMT,-185.00,-6253.70\n2026-03-08,UBER EATS,-169.41,-6423.11\n2026-03-10,AFFIRM PAY LATER,-212.50,-6635.61\n2026-03-11,AMAZON.COM,-207.92,-6843.53\n2026-03-13,VENMO PAYMENT,-152.98,-6996.51\n2026-03-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-4246.51\n2026-03-17,UBER EATS,-192.96,-4439.47\n2026-03-19,AMAZON.COM,-182.32,-4621.79\n2026-03-21,VENMO PAYMENT,-131.65,-4753.44\n2026-03-23,AIRBNB,-161.07,-4914.51\n2026-03-25,NOBU NYC,-214.74,-5129.25\n2026-03-27,AIRBNB,-218.79,-5348.04\n2026-03-29,AMAZON.COM,-209.95,-5557.99\n2026-03-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-2807.99\n2026-04-01,AVALON NEWPORT RENT ACH,-2450.00,-5257.99\n2026-04-02,AIRBNB,-191.06,-5449.05\n2026-04-02,OVERDRAFT FEE,-34.00,-5483.05\n2026-04-03,BMW FINANCIAL LEASE,-589.00,-6072.05\n2026-04-04,EQUINOX MEMBERSHIP,-260.00,-6332.05\n2026-04-05,VENMO PAYMENT,-228.27,-6560.32\n2026-04-06,VERIZON WIRELESS,-85.00,-6645.32\n2026-04-07,CHASE CARD MIN PMT,-185.00,-6830.32\n2026-04-08,THE PRESS LOUNGE,-220.68,-7051.00\n2026-04-10,AFFIRM PAY LATER,-212.50,-7263.50\n2026-04-11,UBER EATS,-192.26,-7455.76\n2026-04-13,THE PRESS LOUNGE,-170.90,-7626.66\n2026-04-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-4876.66\n2026-04-17,UBER EATS,-188.23,-5064.89\n2026-04-19,AIRBNB,-162.42,-5227.31\n2026-04-21,VENMO PAYMENT,-216.77,-5444.08\n2026-04-23,AIRBNB,-236.97,-5681.05\n2026-04-25,THE PRESS LOUNGE,-194.71,-5875.76\n2026-04-27,THE PRESS LOUNGE,-156.90,-6032.66\n2026-04-29,VENMO PAYMENT,-169.32,-6201.98\n2026-04-30,ACME CORP PAYROLL DIRECT DEP,2750.00,-3451.98\n2026-05-01,AVALON NEWPORT RENT ACH,-2450.00,-5901.98\n2026-05-02,AMAZON.COM,-163.98,-6065.96\n2026-05-03,BMW FINANCIAL LEASE,-589.00,-6654.96\n2026-05-04,EQUINOX MEMBERSHIP,-260.00,-6914.96\n2026-05-05,VENMO PAYMENT,-191.77,-7106.73\n2026-05-06,VERIZON WIRELESS,-85.00,-7191.73\n2026-05-08,AMAZON.COM,-198.89,-7390.62\n2026-05-11,THE PRESS LOUNGE,-243.16,-7633.78\n2026-05-13,AMAZON.COM,-272.67,-7906.45\n2026-05-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-5156.45\n2026-05-15,CHASE CARD MIN PMT,-185.00,-5341.45\n2026-05-17,AIRBNB,-192.57,-5534.02\n2026-05-19,AMAZON.COM,-179.54,-5713.56\n2026-05-21,UBER EATS,-165.39,-5878.95\n2026-05-23,VENMO PAYMENT,-206.57,-6085.52\n2026-05-25,NOBU NYC,-295.61,-6381.13\n2026-05-27,SEPHORA,-238.89,-6620.02\n2026-05-29,THE PRESS LOUNGE,-281.98,-6902.00\n2026-05-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-4152.00\n2026-06-02,TICKETMASTER,-142.10,-4294.10\n2026-06-03,BMW FINANCIAL LEASE,-589.00,-4883.10\n2026-06-04,EQUINOX MEMBERSHIP,-260.00,-5143.10\n2026-06-05,AMAZON.COM,-147.68,-5290.78\n2026-06-06,VERIZON WIRELESS,-85.00,-5375.78\n2026-06-08,UBER EATS,-148.56,-5524.34\n2026-06-09,AVALON NEWPORT RENT ACH,-2450.00,-7974.34\n2026-06-10,AFFIRM PAY LATER,-212.50,-8186.84\n2026-06-11,SEPHORA,-240.22,-8427.06\n2026-06-13,AMAZON.COM,-157.93,-8584.99\n2026-06-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-5834.99\n2026-06-15,CHASE CARD MIN PMT,-185.00,-6019.99\n2026-06-17,AMAZON.COM,-139.66,-6159.65\n2026-06-19,UBER EATS,-235.65,-6395.30\n2026-06-21,AIRBNB,-151.14,-6546.44\n2026-06-23,NOBU NYC,-235.94,-6782.38\n2026-06-25,AMAZON.COM,-215.94,-6998.32\n2026-06-27,SEPHORA,-235.03,-7233.35\n2026-06-29,NOBU NYC,-248.66,-7482.01\n2026-06-30,ACME CORP PAYROLL DIRECT DEP,2750.00,-4732.01\n2026-07-01,AVALON NEWPORT RENT ACH,-2450.00,-7182.01\n2026-07-02,NOBU NYC,-216.62,-7398.63\n2026-07-04,EQUINOX MEMBERSHIP,-260.00,-7658.63\n2026-07-05,THE PRESS LOUNGE,-193.70,-7852.33\n2026-07-06,VERIZON WIRELESS,-85.00,-7937.33\n2026-07-08,VENMO PAYMENT,-223.09,-8160.42\n2026-07-11,NOBU NYC,-252.08,-8412.50\n2026-07-12,BMW FINANCIAL LEASE,-589.00,-9001.50\n2026-07-13,THE PRESS LOUNGE,-169.65,-9171.15\n2026-07-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-6421.15\n2026-07-15,CHASE CARD MIN PMT,-185.00,-6606.15\n2026-07-17,NOBU NYC,-211.06,-6817.21\n2026-07-19,NOBU NYC,-251.61,-7068.82\n2026-07-21,AMAZON.COM,-205.95,-7274.77\n2026-07-23,VENMO PAYMENT,-254.91,-7529.68\n2026-07-25,VENMO PAYMENT,-184.28,-7713.96\n2026-07-27,VENMO PAYMENT,-167.54,-7881.50\n2026-07-29,NOBU NYC,-250.51,-8132.01\n2026-07-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-5382.01\n2026-08-02,TICKETMASTER,-171.77,-5553.78\n2026-08-02,OVERDRAFT FEE,-34.00,-5587.78\n2026-08-03,BMW FINANCIAL LEASE,-589.00,-6176.78\n2026-08-04,EQUINOX MEMBERSHIP,-260.00,-6436.78\n2026-08-05,SEPHORA,-252.94,-6689.72\n2026-08-07,CHASE CARD MIN PMT,-185.00,-6874.72\n2026-08-08,TICKETMASTER,-173.12,-7047.84\n2026-08-09,AVALON NEWPORT RENT ACH,-2450.00,-9497.84\n2026-08-11,UBER EATS,-221.78,-9719.62\n2026-08-12,OVERDRAFT FEE,-34.00,-9753.62\n2026-08-13,TICKETMASTER,-277.03,-10030.65\n2026-08-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-7280.65\n2026-08-17,VENMO PAYMENT,-266.05,-7546.70\n2026-08-19,THE PRESS LOUNGE,-224.73,-7771.43\n2026-08-21,SEPHORA,-256.57,-8028.00\n2026-08-23,NOBU NYC,-242.31,-8270.31\n2026-08-25,AIRBNB,-266.56,-8536.87\n2026-08-27,SEPHORA,-232.27,-8769.14\n2026-08-28,OVERDRAFT FEE,-34.00,-8803.14\n2026-08-29,AIRBNB,-230.87,-9034.01\n2026-08-31,ACME CORP PAYROLL DIRECT DEP,2750.00,-6284.01\n2026-09-01,AVALON NEWPORT RENT ACH,-2450.00,-8734.01\n2026-09-02,THE PRESS LOUNGE,-214.67,-8948.68\n2026-09-02,OVERDRAFT FEE,-34.00,-8982.68\n2026-09-04,EQUINOX MEMBERSHIP,-260.00,-9242.68\n2026-09-05,UBER EATS,-264.29,-9506.97\n2026-09-06,VERIZON WIRELESS,-85.00,-9591.97\n2026-09-08,VENMO PAYMENT,-206.32,-9798.29\n2026-09-11,SEPHORA,-242.65,-10040.94\n2026-09-11,OVERDRAFT FEE,-34.00,-10074.94\n2026-09-12,BMW FINANCIAL LEASE,-589.00,-10663.94\n2026-09-13,SEPHORA,-243.17,-10907.11\n2026-09-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-8157.11\n2026-09-15,CHASE CARD MIN PMT,-185.00,-8342.11\n2026-09-17,AMAZON.COM,-178.64,-8520.75\n2026-09-19,SEPHORA,-227.42,-8748.17\n2026-09-21,TICKETMASTER,-269.23,-9017.40\n2026-09-23,SEPHORA,-236.78,-9254.18\n2026-09-25,SEPHORA,-155.47,-9409.65\n2026-09-27,TICKETMASTER,-281.08,-9690.73\n2026-09-29,NOBU NYC,-161.28,-9852.01\n2026-09-30,ACME CORP PAYROLL DIRECT DEP,2750.00,-7102.01\n2026-10-02,TICKETMASTER,-180.26,-7282.27\n2026-10-02,OVERDRAFT FEE,-34.00,-7316.27\n2026-10-03,BMW FINANCIAL LEASE,-589.00,-7905.27\n2026-10-04,EQUINOX MEMBERSHIP,-260.00,-8165.27\n2026-10-05,UBER EATS,-249.17,-8414.44\n2026-10-07,CHASE CARD MIN PMT,-185.00,-8599.44\n2026-10-08,AIRBNB,-269.65,-8869.09\n2026-10-09,AVALON NEWPORT RENT ACH,-2450.00,-11319.09\n2026-10-11,VENMO PAYMENT,-275.13,-11594.22\n2026-10-13,AIRBNB,-189.29,-11783.51\n2026-10-13,OVERDRAFT FEE,-34.00,-11817.51\n2026-10-15,ACME CORP PAYROLL DIRECT DEP,2750.00,-9067.51\n2026-10-17,UBER EATS,-270.52,-9338.03\n2026-10-19,UBER EATS,-197.07,-9535.10\n2026-10-21,AIRBNB,-211.70,-9746.80\n2026-10-23,AIRBNB,-252.39,-9999.19\n2026-10-25,THE PRESS LOUNGE,-166.78,-10165.97\n2026-10-27,THE PRESS LOUNGE,-167.67,-10333.64\n2026-10-28,ACME CORP PAYROLL DIRECT DEP,2750.00,-7583.64\n2026-10-28,VENMO PAYMENT,-266.37,-7850.01\n"}};
+</script>
+<script>
+const T=ThinFile;
 const app=document.getElementById("app");
-const head=`<div class="brand"><div class="logo"><i></i>ThinFile</div></div>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+const pct=x=>x==null?"–":Math.round(x*100)+"%";
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const monLabel=m=>MON[Number(m.slice(5))-1]+(m.slice(5)==="01"||m===state.months0?" '"+m.slice(2,4):"");
+const monHead=m=>MON[Number(m.slice(5))-1]+"<br>"+(m.slice(5)==="01"||m===state.months0?"'"+m.slice(2,4):"&nbsp;");
+const VERDICT={good:"Reliable payer ✅",warn:"Not yet 🟡",bad:"Not ready ❌"};
+const TWINS=[["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"],["Aisha Rahman","Bangladesh"]];
+const head=`<div class="logo"><i><b></b><b></b><b></b></i>ThinFile</div>`;
+const foot=`<p class="foot">Demo. Sample data is made up. Not a credit decision.</p>`;
+let state={};
 
+// ---------- AI helpers (Claude, on the viewer's own account) ----------
+const samplePromise=(async()=>{try{return await window.claude?.use?.("sample")}catch{return null}})();
+async function getSample(){return Promise.race([samplePromise,new Promise(r=>setTimeout(()=>r(null),4000))])}
+let aiOff=false;
+
+async function aiSort(unknown){
+  const sample=await getSample();
+  if(!sample||aiOff||!unknown.length)return {map:{},used:false};
+  const list=unknown.slice(0,60).map(u=>`${u.key} | ${u.amount>0?"money in":"money out"}`).join("\n");
+  try{
+    const res=await sample.json(
+`You label bank transactions for a credit-reliability check. For each merchant below, pick one category:
+income (wages or gig pay), transfer_in (money from a person), rent, bill (utilities, phone, internet, insurance), debt (loan, card, lease, buy-now-pay-later), subscription, spending (everyday purchases), savings, fee (bank fees).
+For rent, bill and debt also give a short human label like "Renters insurance" or "Gym loan".
+Reply with only a JSON object mapping each merchant exactly as written to {"cat": string, "label": string|null}.
+
+${list}`,{modelTier:"quick"});
+    return {map:res&&typeof res==="object"?res:{},used:true};
+  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return {map:{},used:false,err:e.code}}
+}
+
+async function aiCoach(m,sc,plan){
+  const sample=await getSample();
+  if(!sample||aiOff)return null;
+  const facts={verdict:VERDICT[sc.band],score:sc.total,months_of_history:m.months.length,recurring_payments:Object.keys(m.wall),
+    on_time_rate:pct(m.onTime),late_payments:m.late,missed_payments:m.missed,rent_on_time_streak_months:m.rentStreak,
+    average_monthly_income:money(m.mean),income_varies_by:pct(m.cv),share_of_income_left_over:pct(m.left),overdraft_fees_last_90_days:m.overdrafts90,
+    computed_fix_plan:plan.steps.map(s=>`${s.say} (score becomes ${s.after})`)};
+  try{
+    const r=await sample.json(
+`You are the Coach in ThinFile, an app that turns bank history into proof someone pays on time. The score and verdict below were computed by fixed code; do not change them.
+Write for the applicant in plain, warm, direct English. No jargon (never say DTI, NSF, underwriting, FICO). No names, no assumptions about background.
+Reply with only JSON: {"lender": one factual sentence a lender reads first (max 25 words), "applicant": 2 short sentences explaining the result, "tip": one concrete habit tip that supports the fix plan, or null if none needed}.
+
+Facts: ${JSON.stringify(facts)}`,{modelTier:"quick"});
+    return r&&typeof r.lender==="string"?r:null;
+  }catch(e){if(["not_granted","sampling_disabled","not_declared","capability_disabled"].includes(e.code))aiOff=true;return null}
+}
+
+// ---------- Plain-English sentence when AI is not available ----------
+function ruleSentence(m){
+  const parts=[];
+  if(m.rentAmount&&m.rentStreak>=6)parts.push(`Paid ${money(m.rentAmount)} rent on time for ${m.rentStreak} straight months.`);
+  else if(m.rentOn!=null)parts.push(`Rent paid on time ${pct(m.rentOn)} of months.`);
+  if(m.left<0)parts.push(`Spending has been higher than income on average.`);
+  if(m.overdrafts90===0)parts.push("Never overdrawn in the last 90 days.");
+  else parts.push(`${m.overdrafts90} overdraft fee${m.overdrafts90>1?"s":""} in the last 90 days.`);
+  return parts.join(" ");
+}
+
+// ---------- Pipeline ----------
+function pipeline(raw,applicant,aiMap){
+  const red=T.redact(raw,applicant);
+  const s=T.sortRules(red.rows);
+  const sorted=T.applySort(s.sorted,aiMap);
+  const m=T.check(sorted);
+  return {red,s,sorted,m,sc:T.score(m),plan:T.coach(T.check(sorted))};
+}
+
+// ---------- Screens ----------
 function home(){
+  location.hash="";
   app.innerHTML=`${head}
   <section><h1>Don't build credit.<br>Prove it.</h1>
-  <p class="lead">Turn your bank history into proof you pay on time, and share it with any lender or landlord in one link.</p></section>
+  <p class="lead">Turn your bank history into proof you pay on time, and share it with any lender or landlord.</p></section>
   <section style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">Try a sample applicant</div>
-  <div class="people">${Object.entries(PEOPLE).map(([k,p])=>{
-    const row=Object.values(p.bills)[Object.keys(p.bills).length-1].slice(-8);
-    return `<button class="person" data-k="${k}"><b>${p.name.split(" ")[0]}</b><span>${p.tag}</span>
-    <div class="mini">${row.map(s=>`<u style="background:var(--${s==="g"?"good":s==="y"?"warn":"bad"})"></u>`).join("")}</div></button>`}).join("")}</div></section>
-  <p class="foot">Demo with sample data. Not a credit decision.</p>`;
-  app.querySelectorAll(".person").forEach(b=>b.onclick=()=>check(b.dataset.k));
+  <div class="people">${Object.entries(SAMPLES).map(([k,p])=>`<button class="person" data-k="${k}"><b>${esc(p.name.split(" ")[0])}</b><span>${esc(p.tag)}</span><div class="mini">${p.dots.map(c=>`<u style="background:var(--${c})"></u>`).join("")}</div></button>`).join("")}</div></section>
+  <section class="panel"><h2>Check your own history</h2>
+  <p class="muted" style="margin:0">Paste a bank export (CSV) with columns <b>date, description, amount</b>. Money out is negative. It stays in this page; only unknown merchant names are sent to the AI Sorter.</p>
+  <label class="eyebrow" for="own-name">Your name (optional, to show the Privacy Guard hiding it)</label>
+  <input type="text" id="own-name" placeholder="e.g. Sam Rivera">
+  <textarea id="own-csv" placeholder="date,description,amount,balance&#10;2026-09-01,ZELLE TO LANDLORD RENT,-1200,2310.55&#10;..."></textarea>
+  <div class="row2"><button class="b primary" id="own-run">Check my history</button>
+  <label class="b" for="own-file" style="display:inline-block">Upload CSV</label><input type="file" id="own-file" accept=".csv,text/csv" hidden>
+  <button class="b" id="own-fill">Load an example</button></div>
+  <p class="err" id="own-err" hidden></p></section>
+  ${foot}`;
+  app.querySelectorAll(".person").forEach(b=>b.onclick=()=>run(SAMPLES[b.dataset.k].csv,{name:SAMPLES[b.dataset.k].name,from:SAMPLES[b.dataset.k].from},b.dataset.k));
+  const ta=document.getElementById("own-csv"),er=document.getElementById("own-err");
+  document.getElementById("own-fill").onclick=()=>{ta.value=SAMPLES.marcus.csv;document.getElementById("own-name").value="Marcus Johnson"};
+  document.getElementById("own-file").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>ta.value=rd.result;rd.readAsText(f)};
+  document.getElementById("own-run").onclick=()=>{
+    er.hidden=true;
+    try{const rows=T.parseCSV(ta.value);if(rows.length<20)throw new Error("Add at least 3 months of transactions so recurring payments can be found.");
+      run(ta.value,{name:document.getElementById("own-name").value.trim()||"",from:""},null)}
+    catch(e){er.textContent=e.message;er.hidden=false}
+  };
 }
 
-function check(key){
-  const p=PEOPLE[key],d=redact(p),m=measure(d),s=score(m);
-  const n=Object.values(d.bills).flat().length;
-  const steps=[
-    ["Privacy Guard","Name, address and country hidden ✔"],
-    ["Sorter",`Labeled ${n} recurring payments plus income and spending across ${m.months} months`],
-    ["Checker",`${Math.round(m.onTime*100)}% paid on time · ${m.od} overdraft fees in 90 days`],
-    ["Calculator",`Reliability Score: ${s.total} (fixed math, same data = same score)`],
-    ["Coach",s.total>=75?"No fixes needed":"Found the fastest path to approval"]
-  ];
-  app.innerHTML=`${head}<div class="panel"><div class="eyebrow">Checking ${p.name.split(" ")[0]}'s bank history</div>
-  <ol class="steps">${steps.map(([t,r],i)=>`<li><span class="dot">${i+1}</span><div><b>${t}</b><small>${r}</small></div></li>`).join("")}</ol></div>`;
-  const lis=app.querySelectorAll(".steps li");
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  lis.forEach((li,i)=>setTimeout(()=>li.classList.add("on"),reduce?0:i*650));
-  setTimeout(()=>report(key,false),reduce?200:lis.length*650+400);
+const sleep=ms=>new Promise(r=>setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?0:ms));
+async function run(csv,applicant,key){
+  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
+  const steps=[["Privacy Guard","code"],["Sorter","ai"],["Checker","code"],["Calculator","code"],["Coach","ai"]];
+  app.innerHTML=`${head}<div class="panel"><div class="eyebrow">Checking ${esc(first)} bank history</div>
+  <ol class="steps">${steps.map(([t,k],i)=>`<li id="st${i}"><span class="dot">${i+1}</span><div><b>${t}</b><span class="tag ${k}">${k==="ai"?"AI":"code"}</span><small>Waiting…</small></div></li>`).join("")}</ol></div>`;
+  const step=(i,msg,done=true)=>{const li=document.getElementById("st"+i);li.className=done?"on":"run";li.querySelector("small").textContent=msg};
+  try{
+    const raw=T.parseCSV(csv);
+    step(0,"Hiding names…",false);await sleep(500);
+    const red=T.redact(raw,applicant);
+    step(0,`Hid ${red.names} name${red.names===1?"":"s"} from ${raw.length} transactions. Applicant name and country never passed on ✔`);
+    step(1,"Sorting with rules…",false);await sleep(350);
+    const s=T.sortRules(red.rows);
+    let ai={map:{},used:false};
+    if(s.unknown.length){step(1,`Rules sorted ${raw.length-s.sorted.filter(r=>!r.cat).length}. Asking Claude about ${s.unknown.length} unfamiliar merchant${s.unknown.length>1?"s":""}…`,false);ai=await aiSort(s.unknown)}
+    const sorted=T.applySort(s.sorted,ai.map);
+    const byAI=sorted.filter(r=>r.by==="ai").length;
+    step(1,`${sorted.filter(r=>r.by==="rules").length} sorted by rules`+(ai.used?`, ${byAI} by AI`:s.unknown.length?`, ${s.unknown.length} merchant${s.unknown.length>1?"s":""} set to everyday spending (AI unavailable)`:""));
+    step(2,"Finding recurring payments…",false);await sleep(450);
+    const m=T.check(sorted);
+    step(2,`Found ${Object.keys(m.wall).length} recurring payments over ${m.months.length} months · ${pct(m.onTime)} on time · ${m.overdrafts90} overdraft fees in 90 days`);
+    step(3,"Scoring…",false);await sleep(400);
+    const sc=T.score(m);
+    step(3,`Reliability Score ${sc.total}. Fixed math: same history always gives the same score`);
+    const plan=T.coach(m);
+    step(4,plan.needed?"Working out the fastest path to approval…":"Writing the summary…",false);
+    const note=await aiCoach(m,sc,plan);
+    step(4,(plan.needed?`Fastest path: ${plan.steps.length} change${plan.steps.length>1?"s":""} → score ${plan.final}`:"No fixes needed")+(note?" · summary written by AI":" · summary from rules (AI unavailable)"));
+    await sleep(500);
+    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,months0:m.months[0]};
+    if(key)location.hash=key;
+    report(false);
+  }catch(e){
+    app.insertAdjacentHTML("beforeend",`<div class="panel"><p class="err">${esc(e.message||"Something went wrong reading that file.")}</p><button class="b" id="bk">Go back</button></div>`);
+    document.getElementById("bk").onclick=home;
+  }
 }
 
-function wall(bills){
-  return `<div class="wallbox"><div class="wall">
-  <div class="row"><span></span>${MONTHS.map(x=>`<span class="m">${x}</span>`).join("")}</div>
-  ${Object.entries(bills).map(([k,v],ri)=>`<div class="row"><span class="lbl">${k}</span>${v.map((s,i)=>`<span class="d ${s}" style="animation-delay:${(i*40+ri*60)}ms" title="${k} · ${MONTHS[i]}: ${s==="g"?"on time":s==="y"?"late":"missed"}"></span>`).join("")}</div>`).join("")}
+function wall(m){
+  const cols=`grid-template-columns:auto repeat(${m.months.length},minmax(22px,1fr))`;
+  const min=`min-width:${110+m.months.length*24}px`;
+  const word={g:"on time",y:"late",r:"missed",none:"no payment expected"};
+  return `<div class="wallbox"><div class="wall" style="${min}">
+  <div class="r" style="${cols}"><span></span>${m.months.map(x=>`<span class="m">${monHead(x)}</span>`).join("")}</div>
+  ${Object.entries(m.wall).map(([k,v],ri)=>`<div class="r" style="${cols}"><span class="lbl">${esc(k)}</span>${v.map((s,i)=>`<span class="d ${s}" style="animation-delay:${i*35+ri*70}ms" title="${esc(k)} · ${monLabel(m.months[i])}: ${word[s]}"></span>`).join("")}</div>`).join("")}
   </div></div>
   <div class="legend"><span style="--c:var(--good)">On time</span><span style="--c:var(--warn)">Late</span><span style="--c:var(--bad)">Missed</span></div>`;
 }
 
-function report(key,lenderView){
-  const p=PEOPLE[key],d=redact(p),m=measure(d),s=score(m),v=verdict(s.total),c=coach(m,s);
-  const pct=x=>Math.round(x*100)+"%";
+function how(){
+  const {sc,sorted,red}=state;
+  const catName={income:"Income",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt payment",subscription:"Subscription",spending:"Spending",savings:"Savings",fee:"Bank fee"};
+  return `<details><summary>See how we decided</summary>
+  <div style="display:flex;flex-direction:column;gap:10px">
+  ${sc.factors.map(f=>`<div class="factor"><span>${f.name}</span><div class="bar"><i style="width:${f.pts/f.max*100}%"></i></div><span class="v">${f.pts.toFixed(1)}/${f.max}</span></div>`).join("")}
+  <p class="muted" style="margin:4px 0">Weights are fixed in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75+ is Reliable payer, 50–74 is Not yet. The Privacy Guard hid ${red.names} names before anything else ran.</p>
+  <div class="eyebrow">What the Sorter saw (latest 40)</div>
+  <div class="tbl"><table><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Label</th><th>By</th></tr></thead><tbody>
+  ${sorted.slice(-40).reverse().map(r=>`<tr><td>${r.date}</td><td>${esc(r.desc)}</td><td class="amt">${r.amount.toFixed(2)}</td><td>${esc(r.label||catName[r.cat])}</td><td>${r.by==="ai"?'<span class="tag ai">AI</span>':r.by==="rules"?'<span class="tag code">rules</span>':'<span class="tag code">default</span>'}</td></tr>`).join("")}
+  </tbody></table></div></div></details>`;
+}
+
+function report(lender){
+  const {m,sc,plan,note,applicant,key}=state;
+  const first=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
   const nums=`<div class="nums"><div class="num"><strong>${pct(m.rentOn)}</strong><span>rent on time</span></div>
     <div class="num"><strong>${pct(m.billsOn)}</strong><span>bills on time</span></div>
-    <div class="num"><strong>${m.months}</strong><span>months of history</span></div></div>`;
-  const how=`<details><summary>See how we decided</summary>
-    ${Object.entries(s.f).map(([k,x])=>`<div class="factor"><span>${k}</span><div class="bar"><i style="width:${x.pts/x.max*100}%"></i></div><span class="v">${r1(x.pts)}/${x.max}</span></div>`).join("")}
-    <p>Privacy Guard removed name, address and country before any step ran. The score uses fixed weights in code: on-time payments 40, steady income 25, money left over 20, no overdrafts 15. 75+ is Reliable, 50–74 is Not yet.</p></details>`;
-  if(lenderView){
-    app.innerHTML=`${head}<div class="panel lender"><div class="eyebrow">Reliability Report · shared with you</div>
-    <div class="verdict"><span class="badge ${v.cls}">${v.txt}</span><span class="score"><strong>${s.total}</strong>/ 100</span></div>
-    ${wall(d.bills)}${nums}<p class="sentence">"${sentence(key,m)}"</p>
-    <div class="banner">🛡️ Fair check passed: name and background hidden during review</div>${how}</div>
-    <button class="back" id="bk">← Back to applicant view</button>
-    <p class="foot">Demo with sample data. Not a credit decision.</p>`;
-    document.getElementById("bk").onclick=()=>report(key,false);
+    <div class="num"><strong>${m.months.length}</strong><span>months of history</span></div></div>`;
+  const lead=note?`<p class="ai-note"><small>Summary · AI</small>${esc(note.lender)}</p>`:`<p class="sentence">${esc(ruleSentence(m))}</p>`;
+  const verdict=`<div class="verdict"><span class="badge ${sc.band}">${VERDICT[sc.band]}</span><span class="score"><strong>${sc.total}</strong>/ 100</span></div>`;
+  if(lender){
+    app.innerHTML=`${head}<button class="back" id="bk">← Back to ${esc(first.toLowerCase()==="your"?"your":first)} report</button>
+    <div class="panel lender"><div class="eyebrow">Reliability Report · shared with you</div>${verdict}${wall(m)}${nums}${lead}
+    <div class="banner">🛡️ Fair check passed. Name and background were hidden during review.</div></div>
+    <div class="panel">${how()}</div>${foot}`;
+    document.getElementById("bk").onclick=()=>report(false);
+    if(key)location.hash="lender-"+key;
     return;
   }
-  const action=s.total>=75
-    ?`<div class="btns"><button class="b primary" id="share">Share my proof</button></div><div id="shared"></div>`
-    :`<div class="fix ${v.cls==="bad"?"bad":""}"><h3>Your fix</h3><ul>${c.steps.map(o=>`<li>${o.say} <b>→ score ${o.after}</b></li>`).join("")}</ul>
-      ${c.final>=75?`<p style="margin:8px 0 0">Do this and you'll be a <b>Reliable payer</b>.</p>`:`<p style="margin:8px 0 0">These steps get you to ${c.final}. Keep going for one more quarter to reach 75.</p>`}</div>`;
-  app.innerHTML=`${head}<button class="back" id="bk">← Try another person</button>
-  <div class="panel"><div class="eyebrow">${p.name.split(" ")[0]}'s Reliability Report</div>
-  <div class="verdict"><span class="badge ${v.cls}">${v.txt}</span><span class="score"><strong>${s.total}</strong>/ 100</span></div>
-  ${wall(d.bills)}${nums}<p class="sentence">${sentence(key,m)}</p>${action}</div>
-  <div class="panel"><div class="verdict"><h2>🛡️ Fair check passed</h2><button class="b" id="prove">Prove it</button></div>
-  <p style="margin:0;color:var(--muted)">ThinFile never sees your name or where you're from. Run the same bank history under 5 different identities.</p><div id="twins"></div></div>
-  <div class="panel">${how}</div>
-  <p class="foot">Demo with sample data. Not a credit decision.</p>`;
+  const action=!plan.needed
+    ?`<div class="btns"><button class="b primary" id="share">Share my proof</button></div>`
+    :`<div class="fix ${sc.band==="bad"?"bad":""}"><h3>Your fix</h3><ol>${plan.steps.map(s=>`<li>${esc(s.say)} <b>→ score ${s.after}</b></li>`).join("")}</ol>
+      <p style="margin:0">${plan.final>=75?"Do this and you'll be a <b>Reliable payer</b>.":`That gets you to ${plan.final}. Keep it up for another quarter to reach 75.`}</p>
+      ${note&&note.tip?`<p class="ai-note" style="margin-top:4px"><small>Tip · AI</small>${esc(note.tip)}</p>`:""}</div>`;
+  app.innerHTML=`${head}<button class="back" id="bk">← Start over</button>
+  <div class="panel"><div class="eyebrow">${esc(first)} Reliability Report</div>${verdict}${wall(m)}${nums}${lead}
+  ${note&&note.applicant?`<p class="muted" style="margin:0">${esc(note.applicant)}</p>`:""}${action}</div>
+  <div class="panel"><div class="verdict"><h2>🛡️ Fair check</h2><button class="b" id="prove">Prove it</button></div>
+  <p class="muted" style="margin:0">ThinFile never sees your name or where you're from. Run this exact bank history under 5 other identities and compare.</p><div id="twins"></div></div>
+  <div class="panel">${how()}</div>${foot}`;
   document.getElementById("bk").onclick=home;
-  const sh=document.getElementById("share");
-  if(sh)sh.onclick=()=>report(key,true);
-  document.getElementById("prove").onclick=()=>{
-    const rows=TWINS.map(([nm,fr])=>{const t={...p,name:nm,from:fr};const sc=score(measure(redact(t))).total;return {nm,fr,sc,v:verdict(sc).txt}});
-    const same=rows.every(r=>r.sc===rows[0].sc);
-    document.getElementById("twins").innerHTML=`<div class="twins">${rows.map(r=>`<div class="twin"><span>${r.nm} · ${r.fr}</span><span class="s">${r.sc}</span><span>${r.v}</span></div>`).join("")}</div>
-    ${same?`<div class="banner" style="margin-top:10px">Same history. Same result. Fair by design.</div>`:""}`;
-  };
+  const sh=document.getElementById("share");if(sh)sh.onclick=()=>report(true);
+  document.getElementById("prove").onclick=prove;
+}
+
+// Re-runs the whole pipeline with a different identity: the applicant name is swapped
+// and so is any family name inside transfer descriptions.
+function prove(){
+  const {raw,applicant,aiMap,sc}=state;
+  const last=(applicant.name||"").split(" ").slice(-1)[0].toUpperCase();
+  const people=[[applicant.name||"You",applicant.from||"—"],...TWINS];
+  const rows=people.map(([nm,fr],i)=>{
+    const twinLast=nm.split(" ").slice(-1)[0].toUpperCase();
+    const swapped=i===0||!last?raw:raw.map(r=>({...r,desc:r.desc.split(last).join(twinLast)}));
+    const out=pipeline(swapped,{name:nm,from:fr},aiMap);
+    return {nm,fr,score:out.sc.total,band:out.sc.band};
+  });
+  const same=rows.every(r=>r.score===sc.total);
+  document.getElementById("twins").innerHTML=`<div class="twins">${rows.map(r=>`<div class="twin"><span>${esc(r.nm)} · ${esc(r.fr)}</span><span class="s">${r.score}</span><span>${VERDICT[r.band]}</span></div>`).join("")}</div>
+  <div class="banner ${same?"":"warn"}" style="margin-top:10px">${same?"Same history. Same result. Fair by design.":"Scores differ. Something in the data revealed identity."}</div>`;
 }
 
 const h=location.hash.replace("#","");
-if(h.startsWith("lender-")&&PEOPLE[h.slice(7)])report(h.slice(7),true);
-else if(PEOPLE[h])report(h,false);
+const k=h.replace(/^lender-/,"");
+if(SAMPLES[k]){const p=SAMPLES[k];run(p.csv,{name:p.name,from:p.from},k).then(()=>{if(h.startsWith("lender-")&&state.key===k)report(true)})}
 else home();
 </script>
