@@ -66,8 +66,12 @@ def marcus():
     spend = [2400, 2700, 1950, 2250, 3300, 2600, 2150, 1990, 2900, 2500, 2350, 3150, 2050, 2700, 1990, 1950, 3300, 2600]
     t = []
     for i, ym in enumerate(MONTHS):
-        for d, p in zip((6, 13, 20, 27), split(income[i], 4, rng)):
+        # About a fifth of his pay is cash tips, deposited at the ATM twice a month.
+        cash = round(income[i] * 0.2, 2)
+        for d, p in zip((6, 13, 20, 27), split(income[i] - cash, 4, rng)):
             t.append((day(ym, d), rng.choice(["UBER DRIVER WEEKLY PAYOUT", "DOORDASH DASHER PAYOUT"]), p))
+        for d, p in zip((10, 24), split(cash, 2, rng)):
+            t.append((day(ym, d), "ATM CASH DEPOSIT 0417", p))
         fixed = [
             (day(ym, 1), "ZELLE TO R GOMEZ RENT", -950),
             (day(ym, 18 if i == 6 else 8), "T-MOBILE", -65),

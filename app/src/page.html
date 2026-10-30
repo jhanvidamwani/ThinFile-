@@ -26,6 +26,7 @@
   --shadow:0 1px 0 rgba(0,0,0,.3),0 16px 40px -16px rgba(0,0,0,.6); color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--desk);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;margin:0;-webkit-font-smoothing:antialiased}
 .wrap{max-width:980px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
 h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
@@ -215,6 +216,23 @@ th{position:sticky;top:0;background:var(--sheet);font-family:var(--mono);font-si
 td.amt{text-align:right;font-family:var(--mono)}
 .by{font-family:var(--mono);font-size:.65rem;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--faint);color:var(--muted)}
 .by.ai{background:var(--accent-soft);color:var(--accent)}
+.cashbox{border:1px dashed var(--warn);background:var(--warn-soft);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.cashbox.on{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.notes{background:var(--desk);border-radius:8px;padding:14px 16px}
+.notes ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.connect{max-width:520px;margin:0 auto;width:100%}
+.perm{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:.93rem}
+.perm li{display:flex;gap:10px;align-items:flex-start}
+.perm svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--good)}
+.acct{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--rule);border-radius:8px;transition:border-color .15s,background .15s}
+.acct:hover{border-color:var(--ink)}
+.acct[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.acct:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.acct .bank{width:34px;height:34px;border-radius:8px;background:var(--ink);color:var(--sheet);display:grid;place-items:center;font-weight:800;font-size:.8rem}
+.acct small{display:block;color:var(--muted);font-family:var(--mono);font-size:.75rem}
+.demo-flag{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:4px;align-self:flex-start}
+.progress{height:4px;background:var(--faint);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
 .shared{position:absolute;top:-12px;left:20px;background:var(--accent);color:#fff;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
 .foot{color:var(--muted);font-size:.8rem;text-align:center;font-family:var(--mono)}
 
@@ -248,7 +266,7 @@ const pct=x=>x==null?"–":Math.round(x*100)+"%";
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const VERDICT={good:"Reliable payer",warn:"Not yet",bad:"Not ready"};
 const TWINS=[["Emily Johnson","USA"],["Wei Chen","China"],["Carlos Rivera","Mexico"],["Amara Okafor","Nigeria"],["Aisha Rahman","Bangladesh"]];
-const CAT={income:"Income",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt",subscription:"Subscr.",spending:"Spending",savings:"Savings",fee:"Bank fee"};
+const CAT={income:"Income",cash:"Cash",transfer_in:"Money in",rent:"Rent",bill:"Bill",debt:"Debt",subscription:"Subscr.",spending:"Spending",savings:"Savings",fee:"Bank fee"};
 const SHIELD=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>`;
 const FOLDER=`<svg viewBox="0 0 26 22" fill="none"><path d="M1 4a2 2 0 012-2h6l3 3h11a2 2 0 012 2v12a2 2 0 01-2 2H3a2 2 0 01-2-2V4z" fill="currentColor"/><circle cx="8" cy="13" r="2.2" fill="var(--good)"/><circle cx="13.5" cy="13" r="2.2" fill="var(--good)"/><circle cx="19" cy="13" r="2.2" fill="var(--warn)"/></svg>`;
 const sleep=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
@@ -314,10 +332,10 @@ function ruleSentence(m){
   return parts.join(" ");
 }
 
-function pipeline(raw,applicant,aiMap){
+function pipeline(raw,applicant,aiMap,declareCash=false){
   const red=T.redact(raw,applicant);
   const sorted=T.applySort(T.sortRules(red.rows).sorted,aiMap);
-  const m=T.check(sorted);
+  const m=T.check(sorted,{declareCash});
   return {red,sorted,m,sc:T.score(m),id:T.fingerprint(red.rows)};
 }
 
@@ -330,8 +348,9 @@ const monHead=(m,i)=>MON[Number(m.slice(5))-1]+"<br>"+(i===0||m.slice(5)==="01"?
 function wall(m,{maxMonths,interactive=true}={}){
   const start=maxMonths?Math.max(0,m.months.length-maxMonths):0;
   const months=m.months.slice(start);
-  const cols=`grid-template-columns:auto repeat(${months.length},minmax(22px,1fr))`;
-  return `<div class="wallbox"><div class="wall" style="min-width:${110+months.length*24}px">
+  const lw=Math.max(40,...Object.keys(m.wall).map(k=>k.length*8.2+14));
+  const cols=`grid-template-columns:${Math.round(lw)}px repeat(${months.length},minmax(22px,1fr))`;
+  return `<div class="wallbox"><div class="wall" style="min-width:${Math.round(lw)+months.length*24}px">
   <div class="r" style="${cols}"><span></span>${months.map((x,i)=>`<span class="m">${monHead(x,i)}</span>`).join("")}</div>
   ${Object.entries(m.wall).map(([k,v],ri)=>`<div class="r" style="${cols}"><span class="lbl">${esc(k)}</span>${v.slice(start).map((s,i)=>{
     const delay=`style="animation-delay:${reduce?0:i*28+ri*60}ms"`;
@@ -379,7 +398,7 @@ function home(){
       <div class="label">For immigrants, students and gig workers</div>
       <h1 style="margin-top:14px">Don't build credit. <em>Prove it.</em></h1>
       <p class="lead">You've paid rent and bills on time for months. ThinFile reads your bank history, finds every on-time payment, and turns it into a report any lender or landlord can check.</p>
-      <div class="ctas"><button class="btn primary" id="try">Open a sample file</button><button class="btn" id="own">Check my own history</button></div>
+      <div class="ctas"><button class="btn primary" id="connect">Connect a bank (demo)</button><button class="btn" id="try">Open a sample file</button><button class="link" id="own">Upload a CSV</button></div>
     </div>
     <div class="demo" aria-label="Example: Priya's last 12 months of payments">
       <div class="head"><span class="label">Priya · last 12 months</span><span class="count"><b>${onTime}</b> of ${last12.length} on time</span></div>
@@ -422,6 +441,7 @@ function home(){
   </section>
   ${foot}`;
   wireHome();
+  document.getElementById("connect").onclick=()=>go(connectBank);
   document.getElementById("try").onclick=()=>document.getElementById("files").scrollIntoView({behavior:reduce?"auto":"smooth"});
   document.getElementById("own").onclick=()=>{document.getElementById("ownbox").scrollIntoView({behavior:reduce?"auto":"smooth"});setTimeout(()=>document.getElementById("own-csv").focus({preventScroll:true}),400)};
   app.querySelectorAll(".file").forEach(b=>b.onclick=()=>{const p=SAMPLES[b.dataset.k];start(p.csv,{name:p.name,from:p.from},b.dataset.k)});
@@ -433,6 +453,40 @@ function home(){
     try{const rows=T.parseCSV(ta.value);if(rows.length<20)throw new Error("Add at least 3 months of transactions so recurring payments can be found.");
       start(ta.value,{name:document.getElementById("own-name").value.trim(),from:""},null)}
     catch(e){er.textContent=e.message;er.hidden=false}
+  };
+}
+
+// ---------- Connect a bank (simulated) ----------
+// Stands in for a Plaid-style bank link. No bank is contacted: it loads a sample account.
+const CHECK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+function connectBank(){
+  const accts=[["priya","Checking","4521"],["marcus","Checking","8830"],["jordan","Checking","1067"]];
+  app.innerHTML=`${bar()}<div><button class="link" id="bk">← Back</button></div>
+  <div class="sheet connect">
+    <span class="demo-flag">Simulated for this demo · no real bank is contacted</span>
+    <div><h2>Connect your bank</h2><p class="muted" style="margin-top:6px">In the real product this step runs through Plaid, the same way you'd link a bank to Venmo.</p></div>
+    <ul class="perm">
+      <li>${CHECK}<span><b>Read-only.</b> ThinFile can see transactions. It can't move money.</span></li>
+      <li>${CHECK}<span><b>We never see your password.</b> You sign in with your bank, not with us.</span></li>
+      <li>${CHECK}<span><b>Your choice.</b> Nothing is shared with a lender until you send your report.</span></li>
+    </ul>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="label">Pick a sample account</span>
+    ${accts.map(([k,type,last4],i)=>`<button class="acct" data-k="${k}" aria-pressed="${i===0}"><span class="bank">DCU</span><span><b>${esc(SAMPLES[k].name)}</b><small>Demo Credit Union · ${type} ••${last4}</small></span><span class="pill ${PREVIEW[k].sc.band}">${PREVIEW[k].m.months.length} mo</span></button>`).join("")}</div>
+    <div id="cx" hidden style="display:flex;flex-direction:column;gap:8px"><span class="label" id="cx-msg">Connecting</span><div class="progress"><i id="cx-bar"></i></div></div>
+    <button class="btn primary" id="go" style="justify-content:center">Allow read-only access</button>
+  </div>${foot}`;
+  wireHome();
+  document.getElementById("bk").onclick=()=>go(home);
+  let pick="priya";
+  app.querySelectorAll(".acct").forEach(a=>a.onclick=()=>{pick=a.dataset.k;app.querySelectorAll(".acct").forEach(b=>b.setAttribute("aria-pressed",b===a))});
+  document.getElementById("go").onclick=async e=>{
+    e.currentTarget.disabled=true;
+    const cx=document.getElementById("cx"),msg=document.getElementById("cx-msg"),barEl=document.getElementById("cx-bar");
+    cx.hidden=false;
+    requestAnimationFrame(()=>barEl.style.width="45%");
+    await sleep(700);msg.textContent=`Fetching ${PREVIEW[pick].m.months.length} months of transactions`;barEl.style.width="100%";
+    await sleep(800);
+    const p=SAMPLES[pick];start(p.csv,{name:p.name,from:p.from},pick);
   };
 }
 
@@ -499,7 +553,7 @@ async function run(csv,applicant,key){
     const note=await aiCoach(m,sc,plan);
     step(4,(plan.needed?`${plan.steps.length} change${plan.steps.length>1?"s":""} gets you to ${plan.final}`:"No changes needed")+(note?" · summary by Claude":" · summary from rules (AI off)"));
     await sleep(600);
-    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,id:T.fingerprint(red.rows)};
+    state={raw,applicant,key,aiMap:ai.map,sorted,m,sc,plan,note,red,id:T.fingerprint(red.rows),declareCash:false,taxDoc:null};
     if(key)history.replaceState(null,"","#"+key);
     go(()=>report(false));
   }catch(e){
@@ -545,6 +599,18 @@ function how(){
   </tbody></table></div></div></details>`;
 }
 
+function lenderNotes(){
+  const {m,sc,plan,declareCash,taxDoc}=state;
+  const items=[];
+  if(m.cashTotal)items.push(declareCash
+    ?`Income includes <b>${money(m.cashMonthly)}/mo declared cash</b>, marked by the applicant. ${taxDoc?`Tax return attached: ${esc(taxDoc)}.`:"No tax return attached."}`
+    :`${money(m.cashMonthly)}/mo in cash deposits, <b>not counted</b> as income.`);
+  if(sc.band==="warn"&&plan.reviewDate)items.push(`Suggested: a smaller starter offer now, with a review on <b>${plan.reviewDate}</b> if the plan below is met.`);
+  if(plan.needed)items.push(`Applicant's plan: ${plan.steps.map(s=>esc(s.say)).join("; ")}.`);
+  items.push("ThinFile shows payment history only. The lender runs its own identity checks and makes the decision.");
+  return `<div class="notes"><span class="label">Notes for the lender</span><ul>${items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`;
+}
+
 function report(lender){
   const {m,sc,plan,note,applicant,key,id}=state;
   const who=applicant.name?applicant.name.split(" ")[0]+"'s":"Your";
@@ -554,6 +620,7 @@ function report(lender){
   if(lender){
     app.innerHTML=`${bar()}<div><button class="link" id="bk">← Back to ${esc(who==="Your"?"your":who)} report</button></div>
     <div class="sheet shake"><span class="shared">Shared copy</span>${head}${stamp(sc)}${scoreBlock(sc)}${wall(m)}${legend}${figs(m)}${summary}
+    ${lenderNotes()}
     <div class="verdict-line good">${SHIELD}Fair check passed. Name and background were hidden during review.</div>
     <p class="label">Verify: report ${id} covers ${state.raw.length} transactions, ${period(m)}</p></div>
     <div class="sheet">${how()}</div>${foot}`;
@@ -566,21 +633,51 @@ function report(lender){
     ?`<div class="row" style="border-top:2px solid var(--ink);padding-top:16px;justify-content:space-between"><p class="muted" style="max-width:30em">${note?esc(note.applicant):"Your history already proves you pay on time. Share this report with a lender or landlord."}</p><button class="btn primary" id="share">Share my proof →</button></div>`
     :`<div class="plan"><div><h3>Your fastest path to approval</h3>
       <ol>${plan.steps.map(s=>`<li>${esc(s.say)} <b>→ ${s.after}</b></li>`).join("")}</ol>
-      <p class="muted" style="margin-top:10px">${plan.final>=75?"Do this and you'll be a Reliable payer.":`That gets you to ${plan.final}. Keep it up another quarter to reach 75.`}</p>
-      ${note&&note.tip?`<div style="margin-top:12px"><span class="byline">Tip · Claude</span><p>${esc(note.tip)}</p></div>`:""}</div>
+      <p class="muted" style="margin-top:10px">${plan.final>=75?`Do this and you'll be a Reliable payer by <b>${plan.reviewDate}</b>.`:`That gets you to ${plan.final}. Keep it up another quarter to reach 75.`}${sc.band==="warn"?" Until then, lenders may offer a smaller starter limit.":""}</p>
+      ${note&&note.tip?`<div style="margin-top:12px"><span class="byline">Tip · Claude</span><p>${esc(note.tip)}</p></div>`:""}
+      <button class="btn" id="share" style="margin-top:14px">See what a lender sees →</button></div>
       ${whatIf(m)}</div>`;
   app.innerHTML=`${bar()}<div><button class="link" id="bk">← All files</button></div>
   <div class="sheet shake">${head}${stamp(sc)}${scoreBlock(sc)}
   ${wall(m)}${legend}${figs(m)}${summary}
-  ${note&&note.applicant&&plan.needed?`<p class="muted">${esc(note.applicant)}</p>`:""}${action}</div>
+  ${note&&note.applicant&&plan.needed?`<p class="muted">${esc(note.applicant)}</p>`:""}${cashBox()}${action}</div>
   <div class="sheet"><div class="row" style="justify-content:space-between"><div><h2>Fair check</h2><p class="muted" style="margin-top:6px;max-width:34em">Run this exact bank history under five other identities. If ThinFile is fair, every score and every report ID matches.</p></div><button class="btn" id="prove">Run fair check</button></div><div id="twins"></div></div>
   <div class="sheet">${how()}</div>${foot}`;
   wireHome();
   document.getElementById("bk").onclick=()=>go(home);
   const sh=document.getElementById("share");if(sh)sh.onclick=()=>go(()=>report(true));
   document.getElementById("prove").onclick=prove;
-  wireWall(m);countUp(sc.total);
+  wireWall(m);countUp(sc.total);wireCash();
   if(plan.needed)wireWhatIf(m);
+}
+
+// ---------- Declared cash income ----------
+// Cash deposits never count by default. The applicant can declare them as earnings;
+// they then count as income but stay labeled as declared on every view.
+function cashBox(){
+  const {m,declareCash,taxDoc}=state;
+  if(!m.cashTotal)return "";
+  const doc=`<div class="row" style="gap:8px"><label class="btn" for="tax-file">${taxDoc?"Replace tax return":"Attach tax return (optional)"}</label><input type="file" id="tax-file" accept=".pdf,.jpg,.jpeg,.png" hidden>
+    ${taxDoc?`<span class="mono" style="font-size:.8rem">Attached: ${esc(taxDoc)}</span>`:`<span class="muted" style="font-size:.85rem">Backs up your cash income for the lender.</span>`}</div>`;
+  return `<div class="cashbox ${declareCash?"on":""}">
+    <div><span class="label">Cash deposits found</span>
+    <p style="margin-top:4px">${declareCash
+      ?`Counting <b class="mono">${money(m.cashMonthly)}/mo</b> in cash as <b>declared income</b>. Lenders see it marked as declared by you, separate from verified pay.`
+      :`We found <b class="mono">${money(m.cashMonthly)}/mo</b> in cash deposits. They don't count as income unless you say so. If they're earnings, like tips, declare them.`}</p></div>
+    <div class="row"><button class="btn ${declareCash?"":"primary"}" id="declare">${declareCash?"Stop counting cash":"Count as declared income"}</button></div>
+    ${declareCash?doc:""}</div>`;
+}
+function wireCash(){
+  const b=document.getElementById("declare");
+  if(b)b.onclick=()=>{
+    state.declareCash=!state.declareCash;
+    state.m=T.check(state.sorted,{declareCash:state.declareCash});
+    state.sc=T.score(state.m);state.plan=T.coach(state.m);
+    state.note=null; // the AI summary described the old numbers
+    go(()=>report(false));
+  };
+  const f=document.getElementById("tax-file");
+  if(f)f.onchange=e=>{const x=e.target.files[0];if(!x)return;state.taxDoc=x.name;go(()=>report(false))};
 }
 
 // ---------- What-if ----------
@@ -616,7 +713,7 @@ async function prove(){
   for(const [i,[nm,fr]] of people.entries()){
     const twinLast=nm.split(" ").slice(-1)[0].toUpperCase();
     const swapped=i===0||!last?raw:raw.map(r=>({...r,desc:r.desc.split(last).join(twinLast)}));
-    const out=pipeline(swapped,{name:nm,from:fr},aiMap);
+    const out=pipeline(swapped,{name:nm,from:fr},aiMap,state.declareCash);
     if(out.sc.total!==sc.total||out.id!==id)same=false;
     tw.insertAdjacentHTML("beforeend",`<div class="twin"><span>${esc(nm)} <span class="muted">· ${esc(fr)}</span></span><span class="id">${out.id}</span><span class="s">${out.sc.total}</span><span class="pill ${out.sc.band}">${VERDICT[out.sc.band]}</span></div>`);
     await sleep(160);

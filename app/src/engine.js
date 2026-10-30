@@ -63,6 +63,7 @@ const ThinFile = (() => {
   const RULES = [
     ["fee", null, /\bNSF\b|OVERDRAFT|RETURNED ITEM|INSUFFICIENT/],
     ["savings", null, /TRANSFER TO SAVINGS|TO SAVINGS|SAVINGS DEPOSIT/],
+    ["cash", null, /CASH DEPOSIT|ATM DEPOSIT|BRANCH DEPOSIT|TELLER DEPOSIT/],
     ["income", null, /PAYROLL|DIRECT DEP|STIPEND|SALARY|DASHER PAYOUT|DRIVER .*PAYOUT|INSTACART SHOPPER|GRUBHUB DRIVER/],
     ["transfer_in", null, /^(ZELLE|VENMO|WISE TRANSFER|CASH APP|PAYPAL) FROM/],
     ["rent", "Rent", /\bRENT\b/],
@@ -78,7 +79,7 @@ const ThinFile = (() => {
     ["subscription", null, /SPOTIFY|NETFLIX|HULU|APPLE\.COM|EQUINOX|PLANET FITNESS|YOUTUBE/],
     ["spending", null, /TRADER JOE|SHOPRITE|WHOLE FOODS|TARGET|AMAZON|WALMART|UBER EATS|DOORDASH(?! DASHER)|GRUBHUB(?! DRIVER)|CHIPOTLE|SHELL|EXXON|BP |NJ TRANSIT|MTA|NOBU|SEPHORA|AIRBNB|TICKETMASTER|LOUNGE|VENMO PAYMENT|UBER TRIP|LYFT|STARBUCKS|POPEYES|MCDONALD|PATEL BROTHERS|GROCERY|CVS|WALGREENS/],
   ];
-  const CATS = ["income", "transfer_in", "rent", "bill", "debt", "subscription", "spending", "savings", "fee"];
+  const CATS = ["income", "cash", "transfer_in", "rent", "bill", "debt", "subscription", "spending", "savings", "fee"];
   function merchantKey(desc) {
     return desc.replace(/[#*]/g, " ").replace(/\d+/g, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 3).join(" ");
   }
@@ -112,7 +113,9 @@ const ThinFile = (() => {
     while (y < by || (y === by && m <= bm)) { out.push(`${y}-${String(m).padStart(2, "0")}`); m++; if (m > 12) { m = 1; y++; } }
     return out;
   }
-  function check(rows) {
+  // declareCash: the applicant has said their cash deposits are earnings. Only then do
+  // they count as income; they stay labeled as declared, never as verified pay.
+  function check(rows, { declareCash = false } = {}) {
     const first = rows[0].date, last = rows[rows.length - 1].date;
     const months = monthRange(ym(first), ym(last));
     // Recurring payments: rent, bills and debts seen in 3+ different months.
@@ -146,8 +149,10 @@ const ThinFile = (() => {
     // Monthly income and spending (savings transfers are not spending).
     const inc = {}, out = {};
     months.forEach(m => { inc[m] = 0; out[m] = 0; });
+    let cashTotal = 0;
     for (const r of rows) {
-      if (r.cat === "income") inc[ym(r.date)] += r.amount;
+      if (r.cat === "cash" && r.amount > 0) { cashTotal += r.amount; if (declareCash) inc[ym(r.date)] += r.amount; }
+      else if (r.cat === "income") inc[ym(r.date)] += r.amount;
       else if (r.amount < 0 && r.cat !== "savings") out[ym(r.date)] -= r.amount;
     }
     const cutoff = new Date(new Date(last).getTime() - 90 * 864e5).toISOString().slice(0, 10);
@@ -169,6 +174,7 @@ const ThinFile = (() => {
       payments: cells.length, mean, cv: mean ? sd / mean : 1, left,
       rentStreak: (() => { let n = 0; for (let i = rentRow.length - 1; i >= 0 && rentRow[i] === "g"; i--) n++; return n; })(),
       rentAmount: groups.Rent ? Math.round(-groups.Rent[groups.Rent.length - 1].amount) : null,
+      cashTotal, cashMonthly: cashTotal / months.length, declareCash,
       first, last,
     };
   }
@@ -189,13 +195,20 @@ const ThinFile = (() => {
 
   // ---------- 6. Coach ----------
   // Searches for the smallest set of realistic changes that reaches 75.
+  const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  function addDays(iso, n) {
+    const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n);
+    return `${MONTHS_LONG[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  }
+  // Dates count from the last transaction in the history, so the plan is concrete.
   function coach(m) {
     const now = score(m);
-    if (now.total >= 75) return { needed: false, steps: [], final: now.total };
+    if (now.total >= 75) return { needed: false, steps: [], final: now.total, reviewDate: null };
+    const in60 = addDays(m.last, 60), in90 = addDays(m.last, 90);
     const moves = [
-      { key: "od", say: "Avoid overdrafts for the next 60 days", apply: x => ({ ...x, overdrafts90: 0 }) },
-      { key: "left", say: "Spend less than you earn for the next 3 months, keeping about 15% left over", apply: x => ({ ...x, left: Math.max(x.left, 0.15) }) },
-      { key: "onTime", say: "Pay every bill on or before its due date for the next 3 months", apply: x => ({ ...x, onTime: Math.max(x.onTime, 0.97) }) },
+      { key: "od", days: 60, say: `No overdrafts until ${in60}`, apply: x => ({ ...x, overdrafts90: 0 }) },
+      { key: "left", days: 90, say: `Spend less than you earn until ${in90}, keeping about 15% left over each month`, apply: x => ({ ...x, left: Math.max(x.left, 0.15) }) },
+      { key: "onTime", days: 90, say: `Pay every bill on or before its due date until ${in90}`, apply: x => ({ ...x, onTime: Math.max(x.onTime, 0.97) }) },
     ];
     let cur = m; const steps = []; const used = new Set();
     while (score(cur).total < 75 && used.size < moves.length) {
@@ -204,9 +217,10 @@ const ThinFile = (() => {
         .sort((a, b) => b.gain - a.gain)[0];
       if (!best || best.gain <= 0) break;
       used.add(best.mv.key); cur = best.mv.apply(cur);
-      steps.push({ key: best.mv.key, say: best.mv.say, gain: best.gain, after: score(cur).total });
+      steps.push({ key: best.mv.key, days: best.mv.days, say: best.mv.say, gain: best.gain, after: score(cur).total });
     }
-    return { needed: true, steps, final: score(cur).total };
+    const days = Math.max(0, ...steps.map(s => s.days));
+    return { needed: true, steps, final: score(cur).total, reviewDate: days ? addDays(m.last, days) : null };
   }
 
   // ---------- Report ID ----------
